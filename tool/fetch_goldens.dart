@@ -14,13 +14,7 @@ import 'dart:io';
 /// A copy is vendored into this repo so the tests run offline and so that a change to the contract
 /// shows up as a reviewable diff rather than a silent behaviour shift under CI.
 ///
-/// **PENDING FIRST TAG.** The corpus was added to the TypeScript repo after v2.0.1, so no tag
-/// carries it yet. Until one does, the vendored `goldens/corpus.json` is authoritative and the fetch
-/// below will 404 — which `--verify` tolerates deliberately, rather than failing CI over a tag that
-/// does not exist. Bump this to the first release containing `goldens/corpus.json` (a MAJOR: the
-/// `Dialect.stringDelimiter` removal is a breaking change), then re-run this tool and
-/// `tool/embed_goldens.dart`, and the contract becomes live.
-const corpusVersion = '2.0.0';
+const corpusVersion = '3.0.0';
 
 const _repo = 'deebee-tech/sqleasy';
 const _path = 'goldens/corpus.json';
