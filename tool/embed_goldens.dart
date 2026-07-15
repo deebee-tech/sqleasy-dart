@@ -17,10 +17,14 @@ void main() {
   // has no such hazard, needs no escaping, and decodes identically on the VM and under dart2js.
   final encoded = base64.encode(utf8.encode(source));
 
+  // Four-space continuation indent, matching what `dart format` produces for adjacent string
+  // literals — so the generated file is format-stable and never churns CI's format check. (The
+  // `// dart format off` directive is not an option: it needs language version >= 3.8, and this
+  // package's SDK floor is lower.)
   final chunks = <String>[];
   for (var i = 0; i < encoded.length; i += 96) {
-    chunks
-        .add("  '${encoded.substring(i, (i + 96).clamp(0, encoded.length))}'");
+    chunks.add(
+        "    '${encoded.substring(i, (i + 96).clamp(0, encoded.length))}'");
   }
 
   final out = File('test/conformance/corpus_data.dart');
