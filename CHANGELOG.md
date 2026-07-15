@@ -1,15 +1,19 @@
 # Changelog
 
-## 0.1.0-dev
+## 0.1.0
 
-Initial scaffold of the Dart port.
+First release. A complete Dart port of [`@deebeetech/sqleasy`](https://github.com/deebee-tech/sqleasy),
+held to that implementation byte-for-byte by a shared golden corpus.
 
-- Pure Dart package — no Flutter SDK dependency, so it runs on Flutter mobile, desktop and web, and
-  on plain Dart servers.
-- The value-rendering layer (`lib/src/values/`): numbers, dates, and MSSQL `sp_executesql` parameter
-  typing. Written first and deliberately: it is the only place a Dart value becomes SQL text, and the
-  only place the Flutter-web-vs-mobile number divergence can be contained.
-- The golden-corpus harness, verifying the value layer against the frozen TypeScript output on the
-  Dart VM **and** under dart2js.
-
-The builder, parser and dialects are next.
+- **Pure Dart** — no Flutter SDK dependency, no `dart:io`, no `dart:html`. Runs on Flutter mobile,
+  desktop and web, and on plain Dart servers.
+- **Four dialects** — Postgres, MySQL, SQL Server, and SQLite, each with correct identifier quoting,
+  placeholder style, default schema, and transaction wrappers.
+- **Fluent builder** — SELECT / INSERT / UPDATE / DELETE, plus joins, groups, subqueries, CTEs,
+  unions, and batched transactions. Every mutator returns the builder, so chaining and cascades both
+  work. `parsePrepared()` hands you the SQL string and its ordered bound parameters.
+- **Idiomatic API** — named/optional parameters instead of empty-string sentinels, Dart 3 records for
+  batch methods, `Object?` value slots.
+- **Verified against the corpus** — all 189 golden cases replayed across all four dialects, passing
+  on the Dart VM *and* under dart2js. That cross-platform equality is what guarantees the package
+  emits identical SQL on Flutter mobile and Flutter web; see `goldens/README.md`.

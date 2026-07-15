@@ -1,7 +1,7 @@
 name: sqleasy
 description: >-
   A dialect-aware SQL builder for Postgres, MySQL, SQL Server and SQLite. Fluent, zero-dependency, and not an ORM: it emits the SQL and its bound parameters.
-version: 0.1.0-dev
+version: 0.1.0
 
 repository: https://github.com/deebee-tech/sqleasy-dart
 issue_tracker: https://github.com/deebee-tech/sqleasy-dart/issues
