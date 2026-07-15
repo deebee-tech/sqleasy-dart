@@ -71,6 +71,12 @@ String mssqlParameterValue(Object? value) {
   if (value is String) {
     return "N'${value.replaceAll("'", "''")}'";
   }
+  // A BigInt is not a `num`; render its exact decimal as an N-literal, matching TypeScript's
+  // `default` branch (typeof 'bigint' -> N'<digits>') and this package's own valueToDebugString.
+  // Without this it would fall to jsonEncode below, which cannot encode a BigInt and throws.
+  if (value is BigInt) {
+    return "N'${value.toString().replaceAll("'", "''")}'";
+  }
 
   return "N'${jsonEncode(value).replaceAll("'", "''")}'";
 }
