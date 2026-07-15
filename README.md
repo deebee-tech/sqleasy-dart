@@ -18,18 +18,19 @@ There is **no Flutter SDK dependency**, no `dart:io`, no `dart:html`, and no pla
 package is pure string and data manipulation. It runs on Flutter mobile, desktop **and web**, and on
 plain Dart servers.
 
-## Status
+## What it does
 
-**Work in progress.** The value-rendering layer is complete and verified against the shared golden
-corpus on both the Dart VM and dart2js. The builder, parser and dialects are next.
+- **SELECT / INSERT / UPDATE / DELETE**, plus joins, `WHERE` groups, subqueries, `GROUP BY` /
+  `HAVING`, `ORDER BY`, `LIMIT` / `OFFSET`, CTEs, unions, and batched transactions.
+- **Four dialects** — Postgres, MySQL, SQL Server, and SQLite — each with correct identifier
+  quoting, placeholder style, default schema, and transaction wrappers. SQL Server prepared
+  statements come back as a self-contained `sp_executesql`.
+- **A fluent, cascade-friendly API.** Every builder method returns the builder, and `parsePrepared()`
+  hands you the SQL string and its ordered bound parameters — the execution-safe pair you give your
+  driver.
 
-| | |
-|---|---|
-| ✅ | Value rendering (`lib/src/values/`) — numbers, dates, MSSQL parameter typing |
-| ✅ | Golden-corpus harness, running on the VM **and** dart2js |
-| ⬜ | Query state, parser, dialects |
-| ⬜ | `QueryBuilder`, `MultiBuilder`, `JoinOnBuilder` |
-| ⬜ | Full conformance driver (replays all 189 corpus cases) |
+Verified against the shared golden corpus: **all 189 cases across all four dialects, passing on the
+Dart VM and under dart2js.**
 
 ## How correctness is guaranteed
 

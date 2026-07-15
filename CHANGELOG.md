@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Docs: correct the README, which still described the package as a work in progress after the port
+  was already complete. No code changes.
+
 ## 0.1.0
 
 First release. A complete Dart port of [`@deebeetech/sqleasy`](https://github.com/deebee-tech/sqleasy),
