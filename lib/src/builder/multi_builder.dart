@@ -60,4 +60,14 @@ class MultiBuilder {
   /// Renders the batch as a single raw SQL string with values inlined. DEBUG / TEST only.
   String parseRaw() =>
       parser.parseMultiRaw(states(), _transactionState, _config);
+
+  /// The execution-safe form of the batch: each builder rendered as its own prepared
+  /// `(sql, params)`, in batch order. This — not [parse] — is what you run: a batch executes
+  /// statement by statement, because placeholder numbering restarts per statement (so the single
+  /// [parse] string is not a runnable parameterized call) and [parse]/[parseRaw] carry no bound
+  /// values. Open a transaction on your own connection, run each in order, and consult
+  /// [transactionState] to decide whether to wrap them in BEGIN/COMMIT — the delimiters are NOT
+  /// included here.
+  List<parser.PreparedSql> preparedStatements() =>
+      _builders.map((b) => b.parsePrepared()).toList();
 }
