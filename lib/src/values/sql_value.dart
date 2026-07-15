@@ -110,6 +110,22 @@ String formatDateTime(DateTime value) {
   return truncated.toIso8601String();
 }
 
+/// Normalizes a value for binding or inlining.
+///
+/// A `DateTime` is reduced to UTC millisecond precision — the same form [formatDateTime] renders, and
+/// the most a JavaScript `Date` (and therefore the cross-language contract) can represent. Without
+/// this, a bound parameter would carry Dart's microseconds (`.123456Z`) while the TypeScript twin
+/// binds `.123Z`, so the two would disagree at the driver boundary even though their SQL text agreed.
+/// Everything else passes through unchanged.
+Object? normalizeBoundValue(Object? value) {
+  if (value is DateTime) {
+    final u = value.toUtc();
+    return DateTime.utc(
+        u.year, u.month, u.day, u.hour, u.minute, u.second, u.millisecond);
+  }
+  return value;
+}
+
 /// Refuses a value that has no SQL representation, at the point it is bound or inlined.
 ///
 /// `NaN`/`double.infinity` would otherwise render as the bare words `NaN`/`Infinity` when inlined

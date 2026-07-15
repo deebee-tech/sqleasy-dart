@@ -11,8 +11,28 @@
 /// held to that implementation byte-for-byte by a shared golden corpus. See `goldens/README.md`.
 library;
 
+export 'src/builder/join_on_builder.dart' show JoinOnBuilder;
+export 'src/builder/multi_builder.dart' show MultiBuilder;
+export 'src/builder/query_builder.dart'
+    show
+        QueryBuilder,
+        ColumnRef,
+        TableRef,
+        JoinRef,
+        OrderByRef,
+        GroupByRef,
+        SetRef;
+export 'src/configuration.dart'
+    show ConfigurationDelimiters, Dialect, RuntimeConfiguration;
+export 'src/dialects.dart'
+    show MssqlQuery, MysqlQuery, PostgresQuery, SqliteQuery;
+export 'src/enums.dart'
+    show
+        WhereOperator,
+        JoinType,
+        JoinOperator,
+        OrderByDirection,
+        MultiBuilderTransactionState,
+        DatabaseType;
 export 'src/errors/parser_error.dart' show ParserArea, ParserError;
-
-// The builder, dialects and parser land next — see the port plan. `lib/src/values/sql_value.dart`
-// is deliberately first: it is the only place a Dart value becomes SQL text, and getting it wrong
-// makes the package emit different SQL on Flutter web than on Flutter mobile.
+export 'src/parser/to_sql.dart' show PreparedSql;

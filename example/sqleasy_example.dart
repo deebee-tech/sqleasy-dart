@@ -4,14 +4,44 @@ import 'package:sqleasy/sqleasy.dart';
 
 /// SQLEasy builds the SQL and its bound parameters. It does not connect to anything — you hand the
 /// pair to whatever driver you already use (`postgres`, `mysql_client`, `sqflite`, `drift`, …).
-///
-/// The builder API lands in the next milestone; today the package exposes the error type and the
-/// value-rendering layer that the whole port is built on. See README.md.
 void main() {
-  try {
-    throw ParserError(ParserArea.where, 'IN requires at least one value');
-  } on ParserError catch (error) {
-    // Renders exactly as the TypeScript implementation does — the golden corpus matches error text.
-    print(error); // Where: IN requires at least one value
-  }
+  final query = PostgresQuery();
+
+  // A SELECT with a filter. `parsePrepared()` returns the SQL and its ordered bound values — the
+  // only execution-safe form. Hand both straight to your driver: `conn.execute(sql, params)`.
+  final select = query.newBuilder()
+    ..selectColumn('u', 'id')
+    ..selectColumn('u', 'name', alias: 'userName')
+    ..fromTable('users', alias: 'u')
+    ..where('u', 'active', WhereOperator.equals, true)
+    ..and()
+    ..where('u', 'age', WhereOperator.greaterThan, 21);
+
+  final prepared = select.parsePrepared();
+  print(prepared.sql);
+  // SELECT "u"."id", "u"."name" AS "userName" FROM "public"."users" AS "u"
+  //   WHERE "u"."active" = $1 AND "u"."age" > $2;
+  print(prepared.params); // [true, 21]
+
+  // The same builder against a different dialect emits dialect-correct SQL — SQLite here uses `?`
+  // placeholders and no schema prefix.
+  final sqlite = SqliteQuery().newBuilder()
+    ..selectAll()
+    ..fromTable('users', alias: 'u')
+    ..whereInValues('u', 'id', [10, 20, 30]);
+
+  final sqlitePrepared = sqlite.parsePrepared();
+  print(sqlitePrepared
+      .sql); // SELECT * FROM "users" AS "u" WHERE "u"."id" IN (?, ?, ?);
+  print(sqlitePrepared.params); // [10, 20, 30]
+
+  // An INSERT binds its values in column order.
+  final insert = query.newBuilder()
+    ..insertInto('users')
+    ..insertColumns(['name', 'age'])
+    ..insertValues(['Ada', 36]);
+
+  print(insert
+      .parsePrepared()
+      .sql); // INSERT INTO "public"."users" ("name", "age") VALUES ($1, $2);
 }
