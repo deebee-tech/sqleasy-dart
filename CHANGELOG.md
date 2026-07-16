@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.0.0
+
+Tracks the TypeScript `@deebeetech/sqleasy` **7.0.0** golden corpus (was pinned to 6.0.1).
+
+**Breaking — the emitted SQL changed.** SQLEasy no longer applies an automatic row cap, on any
+dialect, and `RuntimeConfiguration.maxRowsReturned` is removed along with it. A row limit is the
+caller's policy: deciding how many rows are too many needs to know what the query is _for_, and only
+the caller knows that. A cap the builder adds on its own is a truncation you never wrote and cannot
+see in your own code — the query looks complete, the results look complete, and rows are quietly
+missing.
+
+It was never coherent either. `selectAll().fromTable('users', 'u')` picked up a `TOP (1000)` on SQL
+Server while the identical query on Postgres, MySQL and SQLite returned every row — and then adding
+an `offset()` made those three cap at `LIMIT 1000` after all.
+
+What changed, mirroring the TypeScript port exactly (51 golden cases move):
+
+- **`RuntimeConfiguration.maxRowsReturned` is gone.** Setting it is now a compile error. Replace it
+  with an explicit `limit()` at your call sites.
+- **MSSQL** emits no `TOP (1000)` on an unbounded `SELECT`, and an `offset()` without a `limit()` no
+  longer appends `FETCH NEXT 1000 ROWS ONLY` — it is now a bare `OFFSET n ROWS`.
+- **Postgres / MySQL / SQLite** no longer emit `LIMIT 1000` for an `offset()` without a `limit()`.
+
+Unchanged, deliberately:
+
+- **`top(n)`** — that IS you asking for a cap. Still SQL-Server-only.
+- **The MySQL/SQLite sentinel limits** (`LIMIT 18446744073709551615` and `LIMIT -1`) on an offset
+  without a limit. Those are grammar, not a cap: neither dialect can spell a bare `OFFSET`, so each
+  needs its own way to say "no upper bound". They bound nothing.
+
+If you relied on the implicit cap, your queries now return every matching row. Add `limit()`.
+
 ## 1.0.0
 
 Tracks the TypeScript `@deebeetech/sqleasy` **6.0.1** golden corpus (was pinned to 6.0.0). No

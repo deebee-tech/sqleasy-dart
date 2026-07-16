@@ -16,9 +16,6 @@ class ConfigurationDelimiters {
 
 /// Options passed when creating a query or builder.
 class RuntimeConfiguration {
-  /// Maximum number of rows to return from an unbounded query; defaults to 1000.
-  int maxRowsReturned = 1000;
-
   /// Optional host-defined settings carried alongside runtime options.
   Object? customConfiguration;
 }

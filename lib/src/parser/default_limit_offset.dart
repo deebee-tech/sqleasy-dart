@@ -4,14 +4,6 @@ import '../errors/parser_error.dart';
 import '../sql_helper.dart';
 import '../state.dart';
 
-/// Whether the automatic row cap (`maxRowsReturned`) applies: an unbounded outer query — no
-/// explicit limit, no WHERE, and not a subquery.
-///
-/// Shared with the MSSQL `TOP` hook in to_sql.dart, which decides the same question, so the two
-/// cannot drift apart. Note this is the *automatic* cap, distinct from an explicit `.top(n)`.
-bool safetyNetApplies(QueryState state) =>
-    state.limit == 0 && !state.isInnerStatement && state.whereStates.isEmpty;
-
 /// Each grammar's idiom for "no upper bound, just skip n rows".
 ///
 /// MySQL and SQLite have no standalone OFFSET — it only parses as the tail of a LIMIT — so an
@@ -38,10 +30,6 @@ SqlHelper defaultLimitOffset(
     if (state.limit > 0) {
       sqlHelper.addSqlSnippet('LIMIT ');
       sqlHelper.addSqlSnippet(state.limit.toString());
-    } else if (safetyNetApplies(state)) {
-      sqlHelper.addSqlSnippet('LIMIT ');
-      sqlHelper.addSqlSnippet(
-          config.runtimeConfiguration.maxRowsReturned.toString());
     } else if (state.offset > 0) {
       // Offset with no limit is a legitimate query — "skip n, return the rest" — but MySQL and
       // SQLite cannot spell it without a limit in front. Postgres yields no sentinel and keeps its
@@ -84,17 +72,6 @@ SqlHelper defaultLimitOffset(
 
       sqlHelper.addSqlSnippet('FETCH NEXT ');
       sqlHelper.addSqlSnippet(state.limit.toString());
-      sqlHelper.addSqlSnippet(' ROWS ONLY');
-    } else if (safetyNetApplies(state)) {
-      // Reached only via an offset (this parser runs only when limit or offset is set), so the
-      // statement already carries an OFFSET — and T-SQL rejects TOP alongside one (Msg 10741). The
-      // automatic cap therefore rides in the FETCH. to_sql.dart suppresses the TOP for this same
-      // case.
-      sqlHelper.addSqlSnippet(' ');
-
-      sqlHelper.addSqlSnippet('FETCH NEXT ');
-      sqlHelper.addSqlSnippet(
-          config.runtimeConfiguration.maxRowsReturned.toString());
       sqlHelper.addSqlSnippet(' ROWS ONLY');
     }
   }
