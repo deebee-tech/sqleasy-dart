@@ -47,6 +47,9 @@ class QueryBuilder {
   QueryState _state = QueryState();
   final Dialect _config;
 
+  /// Where [and] / [or] append — flips when WHERE vs HAVING predicates are added.
+  String _combinatorTarget = 'where';
+
   QueryBuilder _child() => QueryBuilder(_config);
 
   /// The dialect configuration backing this builder.
@@ -55,17 +58,27 @@ class QueryBuilder {
   /// The underlying mutable query state. Consumed by the parser and [MultiBuilder].
   QueryState get state => _state;
 
+  QueryBuilder _pushCombinator(BuilderType builderType) {
+    if (_combinatorTarget == 'having') {
+      _state.havingStates.add(HavingState()
+        ..builderType = builderType
+        ..whereOperator = WhereOperator.none
+        ..values = []);
+      return this;
+    }
+
+    _state.whereStates.add(WhereState()
+      ..builderType = builderType
+      ..whereOperator = WhereOperator.none
+      ..values = []);
+    return this;
+  }
+
   // ---- logic / clearing ----------------------------------------------------------------------
 
-  QueryBuilder and() {
-    _state.whereStates.add(WhereState()..builderType = BuilderType.and);
-    return this;
-  }
+  QueryBuilder and() => _pushCombinator(BuilderType.and);
 
-  QueryBuilder or() {
-    _state.whereStates.add(WhereState()..builderType = BuilderType.or);
-    return this;
-  }
+  QueryBuilder or() => _pushCombinator(BuilderType.or);
 
   QueryBuilder distinct() {
     _state.distinct = true;
@@ -74,6 +87,7 @@ class QueryBuilder {
 
   QueryBuilder clearAll() {
     _state = QueryState();
+    _combinatorTarget = 'where';
     return this;
   }
 
@@ -114,6 +128,12 @@ class QueryBuilder {
 
   QueryBuilder clearSelect() {
     _state.selectStates = [];
+    _state.distinct = false;
+    return this;
+  }
+
+  QueryBuilder clearDistinct() {
+    _state.distinct = false;
     return this;
   }
 
@@ -122,8 +142,40 @@ class QueryBuilder {
     return this;
   }
 
+  QueryBuilder clearCte() {
+    _state.cteStates = [];
+    return this;
+  }
+
+  QueryBuilder clearUnion() {
+    _state.unionStates = [];
+    return this;
+  }
+
+  QueryBuilder clearInsert() {
+    _state.insertState = null;
+    if (_state.queryType == QueryType.insert) {
+      _state.queryType = QueryType.select;
+    }
+    return this;
+  }
+
+  QueryBuilder clearUpdate() {
+    _state.updateStates = [];
+    if (_state.queryType == QueryType.update) {
+      _state.queryType = QueryType.select;
+    }
+    return this;
+  }
+
   QueryBuilder clearTop() {
-    _state.customState?.remove('top');
+    final custom = _state.customState;
+    if (custom != null) {
+      custom.remove('top');
+      if (custom.isEmpty) {
+        _state.customState = null;
+      }
+    }
     return this;
   }
 
@@ -292,6 +344,7 @@ class QueryBuilder {
 
   QueryBuilder where(
       String table, String column, WhereOperator operator, Object? value) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.where
       ..tableNameOrAlias = table
@@ -303,6 +356,7 @@ class QueryBuilder {
 
   QueryBuilder whereBetween(
       String table, String column, Object? from, Object? to) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereBetween
       ..tableNameOrAlias = table
@@ -314,6 +368,7 @@ class QueryBuilder {
 
   QueryBuilder whereInValues(
       String table, String column, List<Object?> values) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereInValues
       ..tableNameOrAlias = table
@@ -324,6 +379,7 @@ class QueryBuilder {
 
   QueryBuilder whereNotInValues(
       String table, String column, List<Object?> values) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereNotInValues
       ..tableNameOrAlias = table
@@ -333,6 +389,7 @@ class QueryBuilder {
   }
 
   QueryBuilder whereNull(String table, String column) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereNull
       ..tableNameOrAlias = table
@@ -341,6 +398,7 @@ class QueryBuilder {
   }
 
   QueryBuilder whereNotNull(String table, String column) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereNotNull
       ..tableNameOrAlias = table
@@ -349,6 +407,7 @@ class QueryBuilder {
   }
 
   QueryBuilder whereRaw(String rawWhere) {
+    _combinatorTarget = 'where';
     _state.whereStates.add(WhereState()
       ..builderType = BuilderType.whereRaw
       ..raw = rawWhere);
@@ -363,6 +422,7 @@ class QueryBuilder {
   }
 
   QueryBuilder whereGroup(void Function(QueryBuilder builder) builder) {
+    _combinatorTarget = 'where';
     _state.whereStates
         .add(WhereState()..builderType = BuilderType.whereGroupBegin);
 
@@ -409,6 +469,7 @@ class QueryBuilder {
     String column,
     void Function(QueryBuilder builder) builder,
   ) {
+    _combinatorTarget = 'where';
     final child = _child();
     builder(child);
     child.state.isInnerStatement = true;
@@ -454,6 +515,7 @@ class QueryBuilder {
 
   QueryBuilder having(
       String table, String column, WhereOperator operator, Object? value) {
+    _combinatorTarget = 'having';
     _state.havingStates.add(HavingState()
       ..builderType = BuilderType.having
       ..tableNameOrAlias = table
@@ -464,6 +526,7 @@ class QueryBuilder {
   }
 
   QueryBuilder havingRaw(String rawHaving) {
+    _combinatorTarget = 'having';
     _state.havingStates.add(HavingState()
       ..builderType = BuilderType.havingRaw
       ..raw = rawHaving);

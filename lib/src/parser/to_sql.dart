@@ -58,7 +58,7 @@ SqlHelper defaultToSql(
   }
 
   if (state.cteStates.isNotEmpty) {
-    final cte = defaultCte(state, config, mode);
+    final cte = defaultCte(state, config, mode, options);
     sqlHelper.addSqlSnippetWithValues(cte.getSql(), cte.getValues());
   }
 
@@ -76,7 +76,7 @@ SqlHelper defaultToSql(
     sqlHelper.addSqlSnippetWithValues(update.getSql(), update.getValues());
 
     if (state.whereStates.isNotEmpty) {
-      final where = defaultWhere(state, config, mode);
+      final where = defaultWhere(state, config, mode, options);
       sqlHelper.addSqlSnippet(' ');
       sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
     }
@@ -92,7 +92,7 @@ SqlHelper defaultToSql(
     sqlHelper.addSqlSnippetWithValues(del.getSql(), del.getValues());
 
     if (state.whereStates.isNotEmpty) {
-      final where = defaultWhere(state, config, mode);
+      final where = defaultWhere(state, config, mode, options);
       sqlHelper.addSqlSnippet(' ');
       sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
     }
@@ -106,18 +106,18 @@ SqlHelper defaultToSql(
   final sel = defaultSelect(state, config, mode, options);
   sqlHelper.addSqlSnippetWithValues(sel.getSql(), sel.getValues());
 
-  final from = defaultFrom(state, config, mode);
+  final from = defaultFrom(state, config, mode, options);
   sqlHelper.addSqlSnippet(' ');
   sqlHelper.addSqlSnippetWithValues(from.getSql(), from.getValues());
 
   if (state.joinStates.isNotEmpty) {
-    final join = defaultJoin(state, config, mode);
+    final join = defaultJoin(state, config, mode, options);
     sqlHelper.addSqlSnippet(' ');
     sqlHelper.addSqlSnippetWithValues(join.getSql(), join.getValues());
   }
 
   if (state.whereStates.isNotEmpty) {
-    final where = defaultWhere(state, config, mode);
+    final where = defaultWhere(state, config, mode, options);
     sqlHelper.addSqlSnippet(' ');
     sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
   }
@@ -234,8 +234,11 @@ String _mssqlToSql(QueryState state, Dialect config) {
 /// Postgres uses numbered `$n` placeholders: substitute the Nth token with `$1`, `$2`, … in order.
 PreparedSql _postgresPrepared(QueryState state, Dialect config) {
   final sqlHelper = defaultToSql(state, config, ParserMode.prepared);
-  final sql =
-      renderPlaceholders(sqlHelper.getSql(), (index) => '\$${index + 1}');
+  // Use the dialect placeholder character as the `$n` prefix so the config field is not dead.
+  final sql = renderPlaceholders(
+    sqlHelper.getSql(),
+    (index) => '${config.preparedStatementPlaceholder}${index + 1}',
+  );
   return PreparedSql(sql, sqlHelper.getValues());
 }
 
@@ -321,7 +324,7 @@ String parseMultiRaw(
   }
 
   if (transactionState == MultiBuilderTransactionState.transactionOn) {
-    sql += '${config.transactionDelimiters.end}; ';
+    sql += '${config.transactionDelimiters.end};';
   }
 
   return sql;

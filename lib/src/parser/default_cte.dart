@@ -5,7 +5,12 @@ import '../sql_helper.dart';
 import '../state.dart';
 import 'to_sql.dart';
 
-SqlHelper defaultCte(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultCte(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.cteStates.isEmpty) {
@@ -14,7 +19,8 @@ SqlHelper defaultCte(QueryState state, Dialect config, ParserMode mode) {
 
   final hasRecursive = state.cteStates.any((cte) => cte.recursive);
 
-  if (hasRecursive) {
+  // SQL Server recursive CTEs use bare `WITH` — `RECURSIVE` is not a T-SQL keyword.
+  if (hasRecursive && config.databaseType != DatabaseType.mssql) {
     sqlHelper.addSqlSnippet('WITH RECURSIVE ');
   } else {
     sqlHelper.addSqlSnippet('WITH ');
@@ -30,7 +36,7 @@ SqlHelper defaultCte(QueryState state, Dialect config, ParserMode mode) {
     if (cteState.builderType == BuilderType.cteRaw) {
       sqlHelper.addSqlSnippet(cteState.raw ?? '');
     } else if (cteState.subquery != null) {
-      final subHelper = defaultToSql(cteState.subquery, config, mode);
+      final subHelper = defaultToSql(cteState.subquery, config, mode, options);
       sqlHelper.addSqlSnippetWithValues(
           subHelper.getSql(), subHelper.getValues());
     }

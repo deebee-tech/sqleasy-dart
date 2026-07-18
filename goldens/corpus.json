@@ -46,7 +46,7 @@
     },
     {
       "name": "int and double render differently when inlined",
-      "note": "The single most important case in the corpus, and the reason input values carry a type tag. `integral_double` is the trap: a double whose value happens to be integral (5.0). JavaScript cannot represent the difference from int 5 at all, so it emits `@p0 tinyint` and `= 5` for BOTH — and that is the frozen contract. Dart CAN represent the difference, and by default would emit `@p0 float` and `= 5.0` for the double. Worse, Dart disagrees with itself: `5.0 is int` is false on the Dart VM but true on dart2js, and `(5.0).toString()` is '5.0' on the VM but '5' on the web. So a naive Dart port fails this case on Flutter mobile and passes it on Flutter web. Dart must normalize an integral double to its integer rendering. Only `d` (5.5, genuinely fractional) may render as a float.",
+      "note": "The single most important case in the corpus, and the reason input values carry a type tag. `integral_double` is the trap: a double whose value happens to be integral (5.0). JavaScript cannot represent the difference from int 5 at all, so it emits `@p0 tinyint` and `= 5` for BOTH \u2014 and that is the frozen contract. Dart CAN represent the difference, and by default would emit `@p0 float` and `= 5.0` for the double. Worse, Dart disagrees with itself: `5.0 is int` is false on the Dart VM but true on dart2js, and `(5.0).toString()` is '5.0' on the VM but '5' on the web. So a naive Dart port fails this case on Flutter mobile and passes it on Flutter web. Dart must normalize an integral double to its integer rendering. Only `d` (5.5, genuinely fractional) may render as a float.",
       "ops": [
         {
           "op": "selectAll"
@@ -419,28 +419,28 @@
             "sql": "BEGIN TRANSACTION; SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u];', N'';SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[orders] AS [o];', N'';COMMIT TRANSACTION;",
             "params": []
           },
-          "raw": "BEGIN TRANSACTION; SELECT * FROM [dbo].[users] AS [u];SELECT * FROM [dbo].[orders] AS [o];COMMIT TRANSACTION; "
+          "raw": "BEGIN TRANSACTION; SELECT * FROM [dbo].[users] AS [u];SELECT * FROM [dbo].[orders] AS [o];COMMIT TRANSACTION;"
         },
         "mysql": {
           "prepared": {
             "sql": "START TRANSACTION; SELECT * FROM `users` AS `u`;SELECT * FROM `orders` AS `o`;COMMIT;",
             "params": []
           },
-          "raw": "START TRANSACTION; SELECT * FROM `users` AS `u`;SELECT * FROM `orders` AS `o`;COMMIT; "
+          "raw": "START TRANSACTION; SELECT * FROM `users` AS `u`;SELECT * FROM `orders` AS `o`;COMMIT;"
         },
         "postgres": {
           "prepared": {
             "sql": "BEGIN; SELECT * FROM \"public\".\"users\" AS \"u\";SELECT * FROM \"public\".\"orders\" AS \"o\";COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; SELECT * FROM \"public\".\"users\" AS \"u\";SELECT * FROM \"public\".\"orders\" AS \"o\";COMMIT; "
+          "raw": "BEGIN; SELECT * FROM \"public\".\"users\" AS \"u\";SELECT * FROM \"public\".\"orders\" AS \"o\";COMMIT;"
         },
         "sqlite": {
           "prepared": {
             "sql": "BEGIN; SELECT * FROM \"users\" AS \"u\";SELECT * FROM \"orders\" AS \"o\";COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; SELECT * FROM \"users\" AS \"u\";SELECT * FROM \"orders\" AS \"o\";COMMIT; "
+          "raw": "BEGIN; SELECT * FROM \"users\" AS \"u\";SELECT * FROM \"orders\" AS \"o\";COMMIT;"
         }
       }
     },
@@ -588,7 +588,7 @@
     },
     {
       "name": "select columns with mixed aliased and unaliased entries",
-      "note": "selectColumns is sugar over repeated selectColumn, so per-entry alias presence must be honoured independently. The middle entry carries an alias and the outer two do not — a port that hoists one alias decision for the whole list produces the wrong separator/AS pattern.",
+      "note": "selectColumns is sugar over repeated selectColumn, so per-entry alias presence must be honoured independently. The middle entry carries an alias and the outer two do not \u2014 a port that hoists one alias decision for the whole list produces the wrong separator/AS pattern.",
       "ops": [
         {
           "op": "selectColumns",
@@ -697,7 +697,7 @@
     },
     {
       "name": "select all with a where on a bound boolean",
-      "note": "The seed case 'select all from table' plus one WHERE, and the pair now pins that a WHERE changes nothing except the WHERE. Until 7.0.0 it changed a great deal: MSSQL injected a safety-net `TOP (1000)` on an unbounded outer SELECT, and any WHERE state suppressed it — so this op-list and the seed case had genuinely different MSSQL shapes. 7.0.0 removed the cap, so all four dialects now differ from the seed case only by the appended predicate. What is left under test is the bound boolean: MSSQL declares `@p0 bit` and passes `@p0 = 1`, not `true`, while the other three bind their own placeholder shape (`?`, `$1`, `?`) and carry the value out in `params`. Raw mode inlines the literal `true` on all four.",
+      "note": "The seed case 'select all from table' plus one WHERE, and the pair now pins that a WHERE changes nothing except the WHERE. Until 7.0.0 it changed a great deal: MSSQL injected a safety-net `TOP (1000)` on an unbounded outer SELECT, and any WHERE state suppressed it \u2014 so this op-list and the seed case had genuinely different MSSQL shapes. 7.0.0 removed the cap, so all four dialects now differ from the seed case only by the appended predicate. What is left under test is the bound boolean: MSSQL declares `@p0 bit` and passes `@p0 = 1`, not `true`, while the other three bind their own placeholder shape (`?`, `$1`, `?`) and carry the value out in `params`. Raw mode inlines the literal `true` on all four.",
       "ops": [
         {
           "op": "selectAll"
@@ -810,7 +810,7 @@
     },
     {
       "name": "select raws with two expressions",
-      "note": "Raw fragments are passed through verbatim — never quoted, never re-delimited. The `MAX(age)` fragment is deliberately written unquoted so a port that tries to be helpful and quote identifiers inside raw SQL is caught.",
+      "note": "Raw fragments are passed through verbatim \u2014 never quoted, never re-delimited. The `MAX(age)` fragment is deliberately written unquoted so a port that tries to be helpful and quote identifiers inside raw SQL is caught.",
       "ops": [
         {
           "op": "selectRaws",
@@ -914,7 +914,7 @@
     },
     {
       "name": "select distinct after the columns is order independent",
-      "note": "`distinct()` sets a flag on the query state, it does not push a select state — so calling it AFTER the columns must render identically to calling it before them (see 'select distinct with two columns'). A port that appends DISTINCT as a positional token in the select list emits `SELECT \"u\".\"name\", DISTINCT ...`.",
+      "note": "`distinct()` sets a flag on the query state, it does not push a select state \u2014 so calling it AFTER the columns must render identically to calling it before them (see 'select distinct with two columns'). A port that appends DISTINCT as a positional token in the select list emits `SELECT \"u\".\"name\", DISTINCT ...`.",
       "ops": [
         {
           "op": "selectColumns",
@@ -971,7 +971,7 @@
     },
     {
       "name": "select distinct with select all",
-      "note": "`SELECT DISTINCT *`, identical on all four dialects. Before 7.0.0 this case carried the DISTINCT/TOP token-order contract: MSSQL's automatic cap made the golden `SELECT DISTINCT TOP (1000) *`, which proved the TOP hook runs after the DISTINCT keyword and before the column list. The cap is gone, so that ordering is now observable only through an explicit `.top(n)` — see the next case, where MSSQL emits `SELECT DISTINCT TOP (10) *`. Reversing the two (`SELECT TOP (10) DISTINCT *`) is still a T-SQL syntax error; this case simply no longer demonstrates it.",
+      "note": "`SELECT DISTINCT *`, identical on all four dialects. Before 7.0.0 this case carried the DISTINCT/TOP token-order contract: MSSQL's automatic cap made the golden `SELECT DISTINCT TOP (1000) *`, which proved the TOP hook runs after the DISTINCT keyword and before the column list. The cap is gone, so that ordering is now observable only through an explicit `.top(n)` \u2014 see the next case, where MSSQL emits `SELECT DISTINCT TOP (10) *`. Reversing the two (`SELECT TOP (10) DISTINCT *`) is still a T-SQL syntax error; this case simply no longer demonstrates it.",
       "ops": [
         {
           "op": "distinct"
@@ -1018,7 +1018,7 @@
     },
     {
       "name": "select distinct with an explicit top",
-      "note": "`.top(n)` renders through the `beforeSelectColumns` hook, which defaultSelect calls after it has written `SELECT ` and the `DISTINCT ` keyword and before the column list — hence `SELECT DISTINCT TOP (10) *`. Emitting `SELECT TOP (10) DISTINCT *` instead is a T-SQL syntax error. MSSQL only: the case declares no other dialect, because top is a silent no-op everywhere else (see 'top is silently ignored by the non-mssql dialects'). Since 7.0.0 removed the automatic cap, an explicit top is the only thing that can put a TOP in a SELECT list at all.",
+      "note": "`.top(n)` renders through the `beforeSelectColumns` hook, which defaultSelect calls after it has written `SELECT ` and the `DISTINCT ` keyword and before the column list \u2014 hence `SELECT DISTINCT TOP (10) *`. Emitting `SELECT TOP (10) DISTINCT *` instead is a T-SQL syntax error. MSSQL only: the case declares no other dialect, because top is a silent no-op everywhere else (see 'top is silently ignored by the non-mssql dialects'). Since 7.0.0 removed the automatic cap, an explicit top is the only thing that can put a TOP in a SELECT list at all.",
       "dialects": [
         "mssql"
       ],
@@ -1051,7 +1051,7 @@
     },
     {
       "name": "select scalar subquery whose value precedes the where value",
-      "note": "PARAM ORDERING. The subquery in the SELECT list binds 'shipped' and the outer WHERE binds true. Clauses are rendered SELECT-then-FROM-then-WHERE, so the subquery's value must be param 0 and the WHERE's value param 1 — Postgres numbers them $1/$2 in that order, and MSSQL declares `@p0 nvarchar(max), @p1 bit`. A port that collects bound values per-clause and concatenates WHERE values before SELECT values produces syntactically valid SQL with the arguments silently transposed: the worst possible failure, because nothing throws.",
+      "note": "PARAM ORDERING. The subquery in the SELECT list binds 'shipped' and the outer WHERE binds true. Clauses are rendered SELECT-then-FROM-then-WHERE, so the subquery's value must be param 0 and the WHERE's value param 1 \u2014 Postgres numbers them $1/$2 in that order, and MSSQL declares `@p0 nvarchar(max), @p1 bit`. A port that collects bound values per-clause and concatenates WHERE values before SELECT values produces syntactically valid SQL with the arguments silently transposed: the worst possible failure, because nothing throws.",
       "ops": [
         {
           "op": "selectColumn",
@@ -1303,7 +1303,7 @@
     },
     {
       "name": "select scalar subquery carries no trailing semicolon",
-      "note": "The SELECT-list subquery is rendered by a fresh defaultToSql with `isInnerStatement` set, and that flag's only remaining job here is to suppress the trailing `;` — the statement has exactly one, at the very end, and a port that forgets the flag emits a stray semicolon inside the parentheses on every dialect. Until 7.0.0 the flag did more: it kept MSSQL's safety-net `TOP (1000)` out of the subquery while the unbounded outer SELECT collected one, so a port that missed it emitted `(SELECT TOP (1000) COUNT(*) ...)` and silently changed the aggregate's meaning. The cap is gone on all four dialects, the MSSQL golden is now the same shape as the other three, and the semicolon is the whole test.",
+      "note": "The SELECT-list subquery is rendered by a fresh defaultToSql with `isInnerStatement` set, and that flag's only remaining job here is to suppress the trailing `;` \u2014 the statement has exactly one, at the very end, and a port that forgets the flag emits a stray semicolon inside the parentheses on every dialect. Until 7.0.0 the flag did more: it kept MSSQL's safety-net `TOP (1000)` out of the subquery while the unbounded outer SELECT collected one, so a port that missed it emitted `(SELECT TOP (1000) COUNT(*) ...)` and silently changed the aggregate's meaning. The cap is gone on all four dialects, the MSSQL golden is now the same shape as the other three, and the semicolon is the whole test.",
       "ops": [
         {
           "op": "selectAll"
@@ -1362,7 +1362,7 @@
     },
     {
       "name": "select scalar subquery with an empty alias emits no as clause",
-      "note": "Unlike selectColumn, the driver reads the subquery alias with the strict accessor — the corpus must spell 'no alias' as an explicit empty string here, not an absent field. The emitter suppresses ` AS ...` on `alias !== ''`, so this renders a bare parenthesised subquery in the select list.",
+      "note": "Unlike selectColumn, the driver reads the subquery alias with the strict accessor \u2014 the corpus must spell 'no alias' as an explicit empty string here, not an absent field. The emitter suppresses ` AS ...` on `alias !== ''`, so this renders a bare parenthesised subquery in the select list.",
       "ops": [
         {
           "op": "selectWithBuilder",
@@ -1476,7 +1476,7 @@
     },
     {
       "name": "select column name embedding every dialect delimiter",
-      "note": "Identifier escaping is per-dialect and doubles ONLY that dialect's own closing delimiter: MSSQL doubles `]`, MySQL doubles the backtick, Postgres and SQLite double `\"`. The other two delimiter characters pass through untouched in each dialect's output — so the same input column name yields four genuinely different strings. Getting this wrong is an injection hole, not a cosmetic bug: an unescaped closing delimiter lets a hostile column or alias name break out of the quoting.",
+      "note": "Identifier escaping is per-dialect and doubles ONLY that dialect's own closing delimiter: MSSQL doubles `]`, MySQL doubles the backtick, Postgres and SQLite double `\"`. The other two delimiter characters pass through untouched in each dialect's output \u2014 so the same input column name yields four genuinely different strings. Getting this wrong is an injection hole, not a cosmetic bug: an unescaped closing delimiter lets a hostile column or alias name break out of the quoting.",
       "ops": [
         {
           "op": "selectColumn",
@@ -1523,7 +1523,7 @@
     },
     {
       "name": "select column name with a nul byte is refused",
-      "note": "A NUL can silently truncate an identifier inside some drivers, turning `secret\\u0000junk` into `secret`, so it is rejected outright rather than escaped. Dart strings admit \\u0000 just as JS does — a port that only guards the delimiter characters will pass this through.",
+      "note": "A NUL can silently truncate an identifier inside some drivers, turning `secret\\u0000junk` into `secret`, so it is rejected outright rather than escaped. Dart strings admit \\u0000 just as JS does \u2014 a port that only guards the delimiter characters will pass this through.",
       "ops": [
         {
           "op": "selectColumn",
@@ -1602,7 +1602,7 @@
     },
     {
       "name": "from table without an alias",
-      "note": "The corpus models 'no alias' as the empty string because the TypeScript API uses '' as the sentinel. A Dart port with a nullable `alias` must treat null and '' identically: the ` AS \"x\"` suffix is emitted only when the alias is non-empty. Note the default owner (dbo/public) is still injected — omitting the alias does not omit the schema.",
+      "note": "The corpus models 'no alias' as the empty string because the TypeScript API uses '' as the sentinel. A Dart port with a nullable `alias` must treat null and '' identically: the ` AS \"x\"` suffix is emitted only when the alias is non-empty. Note the default owner (dbo/public) is still injected \u2014 omitting the alias does not omit the schema.",
       "ops": [
         {
           "op": "selectAll"
@@ -1646,7 +1646,7 @@
     },
     {
       "name": "from table with an explicit owner",
-      "note": "MySQL THROWS here while the other three render a qualified name. The check lives in the FROM parser, not the builder, so the failure surfaces at parse time — a Dart port that validates eagerly in `fromTableWithOwner()` would throw at the wrong moment and fail any test that builds-then-inspects. MSSQL/Postgres/SQLite all replace their default owner with the supplied one.",
+      "note": "MySQL THROWS here while the other three render a qualified name. The check lives in the FROM parser, not the builder, so the failure surfaces at parse time \u2014 a Dart port that validates eagerly in `fromTableWithOwner()` would throw at the wrong moment and fail any test that builds-then-inspects. MSSQL/Postgres/SQLite all replace their default owner with the supplied one.",
       "ops": [
         {
           "op": "selectAll"
@@ -1783,7 +1783,7 @@
     },
     {
       "name": "from table combined with raw fragments",
-      "note": "Raw FROM fragments are appended to the same source list as structured tables and joined with ', ' in insertion order — they are not a separate clause. The raw text is passed through verbatim: no quoting, no owner injection, identical in all four dialects.",
+      "note": "Raw FROM fragments are appended to the same source list as structured tables and joined with ', ' in insertion order \u2014 they are not a separate clause. The raw text is passed through verbatim: no quoting, no owner injection, identical in all four dialects.",
       "ops": [
         {
           "op": "selectAll"
@@ -1838,7 +1838,7 @@
     },
     {
       "name": "from derived table",
-      "note": "The derived table is rendered by the same parser, wrapped in parentheses, and marked as an inner statement — so there is no `;` inside the parens; the statement's single semicolon is the outer one. Before 7.0.0 this case also pinned that MSSQL's automatic `TOP (1000)` reached the OUTER select only and was never injected into a nested builder. There is no automatic TOP any more, so all four goldens are the same shape. For what a nested builder still does to an EXPLICIT `.top(n)`, see 'an explicit top inside a derived table is silently dropped' — that is this op-list plus a top, and its golden is byte-identical to this one.",
+      "note": "The derived table is rendered by the same parser, wrapped in parentheses, and marked as an inner statement \u2014 so there is no `;` inside the parens; the statement's single semicolon is the outer one. Before 7.0.0 this case also pinned that MSSQL's automatic `TOP (1000)` reached the OUTER select only and was never injected into a nested builder. There is no automatic TOP any more, so all four goldens are the same shape. For what a nested builder still does to an EXPLICIT `.top(n)`, see 'an explicit top inside a derived table is silently dropped' \u2014 that is this op-list plus a top, and its golden is byte-identical to this one.",
       "ops": [
         {
           "op": "selectAll"
@@ -1891,7 +1891,7 @@
     },
     {
       "name": "from derived table carrying a bound value",
-      "note": "The derived table's bound value must be spliced into the OUTER param list, ahead of the outer WHERE's value. If a port renders the subquery's SQL but drops its values, the placeholders still ship and every later parameter shifts by one — the query then binds NULL where it meant `true` and silently returns the wrong rows. Postgres is the loudest failure ($1/$2 renumbering); MySQL/SQLite fail silently.",
+      "note": "The derived table's bound value must be spliced into the OUTER param list, ahead of the outer WHERE's value. If a port renders the subquery's SQL but drops its values, the placeholders still ship and every later parameter shifts by one \u2014 the query then binds NULL where it meant `true` and silently returns the wrong rows. Postgres is the loudest failure ($1/$2 renumbering); MySQL/SQLite fail silently.",
       "ops": [
         {
           "op": "selectAll"
@@ -1991,7 +1991,7 @@
     },
     {
       "name": "inner join with a single on condition",
-      "note": "The joined table gets the dialect's default owner exactly like FROM does ([dbo]./\"public\".), but the ON operands are alias-qualified only — aliases are never owner-qualified.",
+      "note": "The joined table gets the dialect's default owner exactly like FROM does ([dbo]./\"public\".), but the ON operands are alias-qualified only \u2014 aliases are never owner-qualified.",
       "ops": [
         {
           "op": "selectAll"
@@ -2051,7 +2051,7 @@
     },
     {
       "name": "every join type in one query",
-      "note": "Pins the keyword text for all seven JoinTypes and the single-space separator between consecutive joins. `Left` and `LeftOuter` are DISTINCT: they render 'LEFT JOIN' and 'LEFT OUTER JOIN' respectively — a port that normalizes them to one keyword breaks byte equality. `Cross` with an empty ON list emits no ON clause at all; the SQL text is identical on all four dialects apart from identifier quoting and owner injection.",
+      "note": "Pins the keyword text for all seven JoinTypes and the single-space separator between consecutive joins. `Left` and `LeftOuter` are DISTINCT: they render 'LEFT JOIN' and 'LEFT OUTER JOIN' respectively \u2014 a port that normalizes them to one keyword breaks byte equality. `Cross` with an empty ON list emits no ON clause at all; the SQL text is identical on all four dialects apart from identifier quoting and owner injection.",
       "ops": [
         {
           "op": "selectAll"
@@ -2174,11 +2174,7 @@
           "raw": "SELECT * FROM [dbo].[users] AS [u] INNER JOIN [dbo].[orders] AS [i] ON [u].[id] = [i].[user_id] LEFT JOIN [dbo].[payments] AS [l] ON [u].[id] = [l].[user_id] LEFT OUTER JOIN [dbo].[refunds] AS [lo] ON [u].[id] = [lo].[user_id] RIGHT JOIN [dbo].[shipments] AS [r] ON [u].[id] = [r].[user_id] RIGHT OUTER JOIN [dbo].[returns] AS [ro] ON [u].[id] = [ro].[user_id] FULL OUTER JOIN [dbo].[audits] AS [f] ON [u].[id] = [f].[user_id] CROSS JOIN [dbo].[roles] AS [c];"
         },
         "mysql": {
-          "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` INNER JOIN `orders` AS `i` ON `u`.`id` = `i`.`user_id` LEFT JOIN `payments` AS `l` ON `u`.`id` = `l`.`user_id` LEFT OUTER JOIN `refunds` AS `lo` ON `u`.`id` = `lo`.`user_id` RIGHT JOIN `shipments` AS `r` ON `u`.`id` = `r`.`user_id` RIGHT OUTER JOIN `returns` AS `ro` ON `u`.`id` = `ro`.`user_id` FULL OUTER JOIN `audits` AS `f` ON `u`.`id` = `f`.`user_id` CROSS JOIN `roles` AS `c`;",
-            "params": []
-          },
-          "raw": "SELECT * FROM `users` AS `u` INNER JOIN `orders` AS `i` ON `u`.`id` = `i`.`user_id` LEFT JOIN `payments` AS `l` ON `u`.`id` = `l`.`user_id` LEFT OUTER JOIN `refunds` AS `lo` ON `u`.`id` = `lo`.`user_id` RIGHT JOIN `shipments` AS `r` ON `u`.`id` = `r`.`user_id` RIGHT OUTER JOIN `returns` AS `ro` ON `u`.`id` = `ro`.`user_id` FULL OUTER JOIN `audits` AS `f` ON `u`.`id` = `f`.`user_id` CROSS JOIN `roles` AS `c`;"
+          "throws": "Join: MySQL does not support FULL OUTER JOIN"
         },
         "postgres": {
           "prepared": {
@@ -2198,7 +2194,7 @@
     },
     {
       "name": "join table with an explicit owner",
-      "note": "Deliberate asymmetry, and the reason this case exists: `fromTableWithOwner` throws on MySQL, but `joinTableWithOwner` does NOT — the owner guard lives only in the FROM parser. MySQL therefore emits `INNER JOIN `sales`.`orders``. A Dart port that hoists the guard into a shared helper (the obvious refactor) would start throwing here and diverge from the frozen behaviour. Reproduce the asymmetry; do not fix it.",
+      "note": "Deliberate asymmetry, and the reason this case exists: `fromTableWithOwner` throws on MySQL, but `joinTableWithOwner` does NOT \u2014 the owner guard lives only in the FROM parser. MySQL therefore emits `INNER JOIN `sales`.`orders``. A Dart port that hoists the guard into a shared helper (the obvious refactor) would start throwing here and diverge from the frozen behaviour. Reproduce the asymmetry; do not fix it.",
       "ops": [
         {
           "op": "selectAll"
@@ -2235,11 +2231,7 @@
           "raw": "SELECT * FROM [dbo].[users] AS [u] INNER JOIN [sales].[orders] AS [o] ON [u].[id] = [o].[user_id];"
         },
         "mysql": {
-          "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` INNER JOIN `sales`.`orders` AS `o` ON `u`.`id` = `o`.`user_id`;",
-            "params": []
-          },
-          "raw": "SELECT * FROM `users` AS `u` INNER JOIN `sales`.`orders` AS `o` ON `u`.`id` = `o`.`user_id`;"
+          "throws": "Join: MySQL does not support table owners"
         },
         "postgres": {
           "prepared": {
@@ -2259,7 +2251,7 @@
     },
     {
       "name": "join to a subquery with a bound value",
-      "note": "Like a derived FROM table, the joined subquery's bound values must be spliced into the outer param list at the position where the JOIN clause is rendered — i.e. after FROM's values and before WHERE's.",
+      "note": "Like a derived FROM table, the joined subquery's bound values must be spliced into the outer param list at the position where the JOIN clause is rendered \u2014 i.e. after FROM's values and before WHERE's.",
       "ops": [
         {
           "op": "selectAll"
@@ -2353,7 +2345,7 @@
     },
     {
       "name": "join raw fragment",
-      "note": "A raw join supplies the entire clause including the JOIN keyword — no keyword, owner, or quoting is added. Consecutive joins (raw or structured) are separated by exactly one space, so the raw text must not carry leading or trailing whitespace of its own.",
+      "note": "A raw join supplies the entire clause including the JOIN keyword \u2014 no keyword, owner, or quoting is added. Consecutive joins (raw or structured) are separated by exactly one space, so the raw text must not carry leading or trailing whitespace of its own.",
       "ops": [
         {
           "op": "selectAll"
@@ -2405,7 +2397,7 @@
     },
     {
       "name": "join on with all six comparison operators",
-      "note": "Pins the JoinOperator symbol table. NotEquals renders `<>`, not `!=`, on every dialect including MySQL and SQLite (which accept both) — a port that picks `!=` breaks byte equality everywhere.",
+      "note": "Pins the JoinOperator symbol table. NotEquals renders `<>`, not `!=`, on every dialect including MySQL and SQLite (which accept both) \u2014 a port that picks `!=` breaks byte equality everywhere.",
       "ops": [
         {
           "op": "selectAll"
@@ -2520,7 +2512,7 @@
     },
     {
       "name": "join on with or between two conditions",
-      "note": "AND/OR in an ON list are flat separators, not precedence-aware operators — no parentheses are inserted around the OR.",
+      "note": "AND/OR in an ON list are flat separators, not precedence-aware operators \u2014 no parentheses are inserted around the OR.",
       "ops": [
         {
           "op": "selectAll"
@@ -2591,7 +2583,7 @@
     },
     {
       "name": "join on value binds ahead of the where value",
-      "note": "`onValue` is the only ON form that binds a parameter. It is emitted in clause order, so 'active' is param 0 and the WHERE's 21 is param 1 — a port that collects WHERE values first would swap them and, on Postgres, produce `$1`/`$2` pointing at each other's values.",
+      "note": "`onValue` is the only ON form that binds a parameter. It is emitted in clause order, so 'active' is param 0 and the WHERE's 21 is param 1 \u2014 a port that collects WHERE values first would swap them and, on Postgres, produce `$1`/`$2` pointing at each other's values.",
       "ops": [
         {
           "op": "selectAll"
@@ -2701,7 +2693,7 @@
     },
     {
       "name": "join on group renders its conditions",
-      "note": "Regression. onGroup built its conditions into a child JoinOnBuilder and then discarded it, so the group rendered as an empty `()` and any onValue inside it was NEVER bound — the JOIN silently matched on the wrong predicate. The group must now contain its predicates, and its values must bind in emission order. Note the closing paren has no leading space: the group end suppresses the condition separator.",
+      "note": "Regression. onGroup built its conditions into a child JoinOnBuilder and then discarded it, so the group rendered as an empty `()` and any onValue inside it was NEVER bound \u2014 the JOIN silently matched on the wrong predicate. The group must now contain its predicates, and its values must bind in emission order. Note the closing paren has no leading space: the group end suppresses the condition separator.",
       "ops": [
         {
           "op": "selectAll"
@@ -2862,7 +2854,7 @@
     },
     {
       "name": "bound value ordering across derived from join subquery on value and where",
-      "note": "The definitive parameter-ordering case for this area: four values entering from four different clauses. The contract is strict clause order — derived-FROM subquery (true), then the joined subquery (paid), then the join's onValue (100), then WHERE (21). Any port that gathers values per-op-type rather than per-rendered-position produces the right SQL with the wrong bindings, which no SQL syntax check will catch.",
+      "note": "The definitive parameter-ordering case for this area: four values entering from four different clauses. The contract is strict clause order \u2014 derived-FROM subquery (true), then the joined subquery (paid), then the join's onValue (100), then WHERE (21). Any port that gathers values per-op-type rather than per-rendered-position produces the right SQL with the wrong bindings, which no SQL syntax check will catch.",
       "ops": [
         {
           "op": "selectAll"
@@ -3034,7 +3026,7 @@
     },
     {
       "name": "join on value with datetime null and double",
-      "note": "Exercises the value renderer through the JOIN path rather than WHERE, which is where MSSQL's `@pN <type>` declarations are derived. Two traps: (1) `onValue(null)` binds a NULL parameter and emits `= @p/?` — it is NOT rewritten to `IS NULL`, so a port must not special-case it; (2) the null still occupies a parameter slot, so dropping it (a natural Dart `where(notNull)` filter) shifts every later binding.",
+      "note": "Exercises the value renderer through the JOIN path rather than WHERE, which is where MSSQL's `@pN <type>` declarations are derived. Two traps: (1) `onValue(null)` binds a NULL parameter and emits `= @p/?` \u2014 it is NOT rewritten to `IS NULL`, so a port must not special-case it; (2) the null still occupies a parameter slot, so dropping it (a natural Dart `where(notNull)` filter) shifts every later binding.",
       "ops": [
         {
           "op": "selectAll"
@@ -3168,7 +3160,7 @@
     },
     {
       "name": "join on list beginning with and is refused",
-      "note": "ON-list well-formedness is validated in the parser, not the builder — the builder happily accepts the leading AND and the error only appears at parse time, on every dialect.",
+      "note": "ON-list well-formedness is validated in the parser, not the builder \u2014 the builder happily accepts the leading AND and the error only appears at parse time, on every dialect.",
       "ops": [
         {
           "op": "selectAll"
@@ -3511,7 +3503,7 @@
     },
     {
       "name": "where with like and not like",
-      "note": "The wildcards live in the VALUE, not in the SQL — the builder never adds or escapes `%`/`_`, and the value is bound like any other. A port that interpolates the pattern into the SQL text, or that escapes wildcards, breaks this. Note the operator renders as two words for NOT LIKE.",
+      "note": "The wildcards live in the VALUE, not in the SQL \u2014 the builder never adds or escapes `%`/`_`, and the value is bound like any other. A port that interpolates the pattern into the SQL text, or that escapes wildcards, breaks this. Note the operator renders as two words for NOT LIKE.",
       "ops": [
         {
           "op": "selectAll"
@@ -3605,7 +3597,7 @@
     },
     {
       "name": "where equals with a null value",
-      "note": "`where(..., Equals, null)` is NOT rewritten to IS NULL — it emits `= <placeholder>` and binds a null, which never matches a row. That is deliberate (the caller wanted whereNull), and each dialect renders it differently: MSSQL declares the parameter and assigns `@p0 = NULL`, the ?/$ dialects bind a real null so later parameters stay aligned, and raw mode inlines the null as the EMPTY STRING. A port that drops the null from params shifts every later value by one.",
+      "note": "`where(..., Equals, null)` is NOT rewritten to IS NULL \u2014 it emits `= <placeholder>` and binds a null, which never matches a row. That is deliberate (the caller wanted whereNull), and each dialect renders it differently: MSSQL declares the parameter and assigns `@p0 = NULL`, the ?/$ dialects bind a real null so later parameters stay aligned, and raw mode inlines the null as the EMPTY STRING. A port that drops the null from params shifts every later value by one.",
       "ops": [
         {
           "op": "selectAll"
@@ -3641,55 +3633,46 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[deleted_at] = @p0 AND [u].[name] = @p1;', N'@p0 nvarchar(max), @p1 nvarchar(max)', @p0 = NULL, @p1 = N'after';",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[deleted_at] IS NULL AND [u].[name] = @p0;', N'@p0 nvarchar(max)', @p0 = N'after';",
             "params": []
           },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[deleted_at] =  AND [u].[name] = after;"
+          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[deleted_at] IS NULL AND [u].[name] = after;"
         },
         "mysql": {
           "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`deleted_at` = ? AND `u`.`name` = ?;",
+            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`deleted_at` IS NULL AND `u`.`name` = ?;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
               }
             ]
           },
-          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`deleted_at` =  AND `u`.`name` = after;"
+          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`deleted_at` IS NULL AND `u`.`name` = after;"
         },
         "postgres": {
           "prepared": {
-            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"deleted_at\" = $1 AND \"u\".\"name\" = $2;",
+            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"deleted_at\" IS NULL AND \"u\".\"name\" = $1;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
               }
             ]
           },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"deleted_at\" =  AND \"u\".\"name\" = after;"
+          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"deleted_at\" IS NULL AND \"u\".\"name\" = after;"
         },
         "sqlite": {
           "prepared": {
-            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"deleted_at\" = ? AND \"u\".\"name\" = ?;",
+            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"deleted_at\" IS NULL AND \"u\".\"name\" = ?;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
               }
             ]
           },
-          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"deleted_at\" =  AND \"u\".\"name\" = after;"
+          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"deleted_at\" IS NULL AND \"u\".\"name\" = after;"
         }
       }
     },
@@ -3764,7 +3747,7 @@
     },
     {
       "name": "where with a datetime value",
-      "note": "A DateTime is always rendered as its ISO-8601 UTC string with milliseconds and a trailing Z. MSSQL declares it nvarchar(max) (it falls through the type switch as an object) and single-quotes it WITHOUT the N prefix; the other dialects bind the value itself. Dart's DateTime.toIso8601String() only matches if the DateTime is UTC — a local-time DateTime emits no Z and produces a different string.",
+      "note": "A DateTime is always rendered as its ISO-8601 UTC string with milliseconds and a trailing Z. MSSQL declares it nvarchar(max) (it falls through the type switch as an object) and single-quotes it WITHOUT the N prefix; the other dialects bind the value itself. Dart's DateTime.toIso8601String() only matches if the DateTime is UTC \u2014 a local-time DateTime emits no Z and produces a different string.",
       "ops": [
         {
           "op": "selectAll"
@@ -4110,7 +4093,7 @@
     },
     {
       "name": "where between two datetimes with predicates on both sides",
-      "note": "BETWEEN emits TWO placeholders and binds low then high. It must not be collapsed into one, and its two values sit between the surrounding predicates' values in the params list — get the order wrong and the range silently inverts.",
+      "note": "BETWEEN emits TWO placeholders and binds low then high. It must not be collapsed into one, and its two values sit between the surrounding predicates' values in the params list \u2014 get the order wrong and the range silently inverts.",
       "ops": [
         {
           "op": "selectAll"
@@ -4244,7 +4227,7 @@
     },
     {
       "name": "where null and where not null chained",
-      "note": "IS NULL / IS NOT NULL bind NOTHING. A port that pushes a placeholder for them shifts every later bound value — hence the trailing `= 1` here, whose parameter must still be the first and only one.",
+      "note": "IS NULL / IS NOT NULL bind NOTHING. A port that pushes a placeholder for them shifts every later bound value \u2014 hence the trailing `= 1` here, whose parameter must still be the first and only one.",
       "ops": [
         {
           "op": "selectAll"
@@ -4430,7 +4413,7 @@
     },
     {
       "name": "where in values with mixed types including a null",
-      "note": "Every element of the list gets its own placeholder and its own bound value — including the null, and including the bool. MSSQL declares a DIFFERENT T-SQL type per element of the same list (tinyint / nvarchar(max) / bit / nvarchar(max) for the null). The separator is exactly `, `.",
+      "note": "Every element of the list gets its own placeholder and its own bound value \u2014 including the null, and including the bool. MSSQL declares a DIFFERENT T-SQL type per element of the same list (tinyint / nvarchar(max) / bit / nvarchar(max) for the null). The separator is exactly `, `.",
       "ops": [
         {
           "op": "selectAll"
@@ -4544,7 +4527,7 @@
     },
     {
       "name": "where not in values with a single value",
-      "note": "A one-element list must emit no separator at all — an off-by-one in the comma loop shows up here as a trailing `, ` before the closing paren.",
+      "note": "A one-element list must emit no separator at all \u2014 an off-by-one in the comma loop shows up here as a trailing `, ` before the closing paren.",
       "ops": [
         {
           "op": "selectAll"
@@ -4722,7 +4705,7 @@
     },
     {
       "name": "empty where group renders empty parentheses",
-      "note": "Pins current behaviour, warts and all: an empty whereGroup emits a bare `()`, which is not executable SQL. It is NOT an error and must NOT be optimized away — a port that omits the empty group, or that throws, diverges. Note also that the preceding AND still gets its trailing space.",
+      "note": "Pins current behaviour, warts and all: an empty whereGroup emits a bare `()`, which is not executable SQL. It is NOT an error and must NOT be optimized away \u2014 a port that omits the empty group, or that throws, diverges. Note also that the preceding AND still gets its trailing space.",
       "ops": [
         {
           "op": "selectAll"
@@ -4798,7 +4781,7 @@
     },
     {
       "name": "nested where groups two levels deep",
-      "note": "Spacing is the trap. A group renders as `(`, the sub-builder's WHERE body with its `WHERE ` prefix stripped, then `)` — and no space is emitted between the last inner predicate and the closing paren. Get it wrong and you get `( ... )` instead of `(...)`. Params bind depth-first in emission order: 1, 2, 3, 4.",
+      "note": "Spacing is the trap. A group renders as `(`, the sub-builder's WHERE body with its `WHERE ` prefix stripped, then `)` \u2014 and no space is emitted between the last inner predicate and the closing paren. Get it wrong and you get `( ... )` instead of `(...)`. Params bind depth-first in emission order: 1, 2, 3, 4.",
       "ops": [
         {
           "op": "selectAll"
@@ -5194,7 +5177,7 @@
     },
     {
       "name": "where in with builder followed by an outer predicate",
-      "note": "Regression class: the subquery's value used to be dropped from params entirely, leaving `true` bound to slot 1. The subquery's 100 must occupy slot 1 and the outer true slot 2 — placeholders bind in EMISSION order, not in the order the builder methods were called.",
+      "note": "Regression class: the subquery's value used to be dropped from params entirely, leaving `true` bound to slot 1. The subquery's 100 must occupy slot 1 and the outer true slot 2 \u2014 placeholders bind in EMISSION order, not in the order the builder methods were called.",
       "ops": [
         {
           "op": "selectAll"
@@ -5305,7 +5288,7 @@
     },
     {
       "name": "where not in with builder between two outer predicates",
-      "note": "The subquery's value must land in the MIDDLE slot (18, 'spam', 'a%'). Collecting outer values first and subquery values afterwards — an easy way to write the parser — produces the right SQL with the wrong bindings, which no raw-SQL assertion would catch.",
+      "note": "The subquery's value must land in the MIDDLE slot (18, 'spam', 'a%'). Collecting outer values first and subquery values afterwards \u2014 an easy way to write the parser \u2014 produces the right SQL with the wrong bindings, which no raw-SQL assertion would catch.",
       "ops": [
         {
           "op": "selectAll"
@@ -5441,7 +5424,7 @@
     },
     {
       "name": "where exists with builder correlated by a raw predicate",
-      "note": "EXISTS ignores the table/column arguments entirely — the output is `EXISTS (subquery)`, with no column reference before it. A port that renders the column (e.g. `[u].[id] EXISTS (...)`) diverges. The correlated raw fragment is emitted verbatim, and the subquery's 50 binds between the outer true and 65.",
+      "note": "EXISTS ignores the table/column arguments entirely \u2014 the output is `EXISTS (subquery)`, with no column reference before it. A port that renders the column (e.g. `[u].[id] EXISTS (...)`) diverges. The correlated raw fragment is emitted verbatim, and the subquery's 50 binds between the outer true and 65.",
       "ops": [
         {
           "op": "selectAll"
@@ -5675,7 +5658,7 @@
     },
     {
       "name": "where group containing an in subquery with values on both sides",
-      "note": "The parameter-order case that matters most: a subquery nested inside a GROUP, which is itself a sub-builder. Values must come out 1, 100, true, 21 — the group's own values are spliced into the parent at the point the group is emitted, and the subquery's values are spliced into the group at the point IT is emitted. Any parser that gathers group values or subquery values in a separate pass gets identical SQL with permuted bindings.",
+      "note": "The parameter-order case that matters most: a subquery nested inside a GROUP, which is itself a sub-builder. Values must come out 1, 100, true, 21 \u2014 the group's own values are spliced into the parent at the point the group is emitted, and the subquery's values are spliced into the group at the point IT is emitted. Any parser that gathers group values or subquery values in a separate pass gets identical SQL with permuted bindings.",
       "ops": [
         {
           "op": "selectAll"
@@ -5841,7 +5824,7 @@
     },
     {
       "name": "in subquery nested two levels deep",
-      "note": "Two levels of sub-builder. Params must be 100, 10, true: inner-most first, because it is emitted first. Postgres numbering ($1..$3) is the visible proof — a port that renumbers per sub-builder emits $1 twice.",
+      "note": "Two levels of sub-builder. Params must be 100, 10, true: inner-most first, because it is emitted first. Postgres numbering ($1..$3) is the visible proof \u2014 a port that renumbers per sub-builder emits $1 twice.",
       "ops": [
         {
           "op": "selectAll"
@@ -6127,7 +6110,7 @@
     },
     {
       "name": "and as the first operator inside a where group is refused",
-      "note": "Subtle: the group body is its own sub-builder, so a leading AND inside it is caught as `First WHERE operator cannot be AND or OR` — NOT as `AND or OR cannot be used directly after a group begin`. The message is part of the contract; a port that emits the group-begin message here diverges. (The group-begin check exists but is unreachable through this API, since a group begin is always followed by the group's body node.)",
+      "note": "Subtle: the group body is its own sub-builder, so a leading AND inside it is caught as `First WHERE operator cannot be AND or OR` \u2014 NOT as `AND or OR cannot be used directly after a group begin`. The message is part of the contract; a port that emits the group-begin message here diverges. (The group-begin check exists but is unreachable through this API, since a group begin is always followed by the group's body node.)",
       "ops": [
         {
           "op": "selectAll"
@@ -6232,7 +6215,7 @@
     },
     {
       "name": "empty not in values is refused",
-      "note": "`NOT IN ()` is a syntax error in every dialect. It is refused rather than rewritten to a true predicate, because an empty collection is nearly always a caller bug. The message differs from the IN one — it says NOT IN.",
+      "note": "`NOT IN ()` is a syntax error in every dialect. It is refused rather than rewritten to a true predicate, because an empty collection is nearly always a caller bug. The message differs from the IN one \u2014 it says NOT IN.",
       "ops": [
         {
           "op": "selectAll"
@@ -6266,7 +6249,7 @@
     },
     {
       "name": "empty in values inside a where group is refused",
-      "note": "The empty-IN guard must fire from inside a group's sub-builder too, not just at the top level — the error has to propagate out of the nested parse rather than being swallowed into an empty fragment.",
+      "note": "The empty-IN guard must fire from inside a group's sub-builder too, not just at the top level \u2014 the error has to propagate out of the nested parse rather than being swallowed into an empty fragment.",
       "ops": [
         {
           "op": "selectAll"
@@ -6398,7 +6381,7 @@
     },
     {
       "name": "group by two columns and a raw expression",
-      "note": "Two things were pinned here; one survives. (1) GROUP BY entries are joined with ', ' in insertion order regardless of kind, so a raw fragment interleaves with quoted columns exactly where it was added — `DATE(o.created_at)` lands last, unquoted and verbatim. (2) Before 7.0.0 the second pin was that a GROUP BY did not count as 'bounded': with no WHERE, MSSQL's unbounded-query safety net still fired and stacked a `TOP (1000)` on top of the aggregate while the other three emitted nothing. That cap is gone, all four goldens are now the same shape, and only (1) is under test.",
+      "note": "Two things were pinned here; one survives. (1) GROUP BY entries are joined with ', ' in insertion order regardless of kind, so a raw fragment interleaves with quoted columns exactly where it was added \u2014 `DATE(o.created_at)` lands last, unquoted and verbatim. (2) Before 7.0.0 the second pin was that a GROUP BY did not count as 'bounded': with no WHERE, MSSQL's unbounded-query safety net still fired and stacked a `TOP (1000)` on top of the aggregate while the other three emitted nothing. That cap is gone, all four goldens are now the same shape, and only (1) is under test.",
       "ops": [
         {
           "op": "selectColumn",
@@ -6469,7 +6452,7 @@
     },
     {
       "name": "group by with having greater than",
-      "note": "Param ORDER is the contract: the WHERE value binds before the HAVING value, because to-sql walks WHERE then GROUP BY then HAVING. A port that collects HAVING params first still produces identical SQL text but binds them in the wrong order — MySQL/SQLite would silently compare `active > 5`, and MSSQL would declare @p0 tinyint / @p1 bit. Nothing catches this except the params array.",
+      "note": "Param ORDER is the contract: the WHERE value binds before the HAVING value, because to-sql walks WHERE then GROUP BY then HAVING. A port that collects HAVING params first still produces identical SQL text but binds them in the wrong order \u2014 MySQL/SQLite would silently compare `active > 5`, and MSSQL would declare @p0 tinyint / @p1 bit. Nothing catches this except the params array.",
       "ops": [
         {
           "op": "selectColumn",
@@ -6572,7 +6555,7 @@
     },
     {
       "name": "having not equals a string value",
-      "note": "HAVING renders NotEquals as `<>`, never `!=`, in every dialect — and the value is bound, not inlined, so MSSQL declares it nvarchar(max).",
+      "note": "HAVING renders NotEquals as `<>`, never `!=`, in every dialect \u2014 and the value is bound, not inlined, so MSSQL declares it nvarchar(max).",
       "ops": [
         {
           "op": "selectColumn",
@@ -6734,7 +6717,7 @@
     },
     {
       "name": "group by with having raw",
-      "note": "A raw HAVING fragment is emitted verbatim and binds NO parameter — the aggregate literal `10` stays inline even in prepared mode. A port that parameterizes raw fragments breaks the param count.",
+      "note": "A raw HAVING fragment is emitted verbatim and binds NO parameter \u2014 the aggregate literal `10` stays inline even in prepared mode. A port that parameterizes raw fragments breaks the param count.",
       "ops": [
         {
           "op": "selectColumn",
@@ -6819,7 +6802,7 @@
     },
     {
       "name": "having without group by is refused",
-      "note": "HAVING is only legal against a GROUP BY here, and the check lives in the HAVING parser — not the builder — so it fires at parse time, not at .having() time. A port that validates eagerly in the builder throws too early and cannot reproduce the message.",
+      "note": "HAVING is only legal against a GROUP BY here, and the check lives in the HAVING parser \u2014 not the builder \u2014 so it fires at parse time, not at .having() time. A port that validates eagerly in the builder throws too early and cannot reproduce the message.",
       "ops": [
         {
           "op": "selectRaw",
@@ -6843,22 +6826,22 @@
       ],
       "expect": {
         "mssql": {
-          "throws": "General: HAVING requires a GROUP BY clause"
+          "throws": "Having: HAVING requires a GROUP BY clause"
         },
         "mysql": {
-          "throws": "General: HAVING requires a GROUP BY clause"
+          "throws": "Having: HAVING requires a GROUP BY clause"
         },
         "postgres": {
-          "throws": "General: HAVING requires a GROUP BY clause"
+          "throws": "Having: HAVING requires a GROUP BY clause"
         },
         "sqlite": {
-          "throws": "General: HAVING requires a GROUP BY clause"
+          "throws": "Having: HAVING requires a GROUP BY clause"
         }
       }
     },
     {
-      "name": "two having predicates are joined by a bare space",
-      "note": "KNOWN GAP, pinned deliberately. The builder exposes no havingAnd/havingOr: and()/or() push onto whereStates, never havingStates. So two HAVING predicates concatenate with a single space and produce SQL no engine will accept. Reproduce it byte-for-byte anyway — a port that helpfully inserts `AND` diverges from the reference implementation, which is the one thing the corpus forbids. Fix it in both implementations at once, or not at all.",
+      "name": "two having predicates are joined by AND",
+      "note": "Consecutive HAVING predicates (with no explicit and()/or() between them) are joined with AND so `.having().having()` and `havingRaws([...])` emit valid SQL. Explicit `.and()` / `.or()` after a HAVING predicate also target havingStates.",
       "ops": [
         {
           "op": "selectColumn",
@@ -6904,14 +6887,14 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT [u].[status] AS [status], COUNT(*) AS cnt FROM [dbo].[users] AS [u] GROUP BY [u].[status] HAVING [u].[status] > @p0 [u].[status] < @p1;', N'@p0 tinyint, @p1 tinyint', @p0 = 5, @p1 = 100;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT [u].[status] AS [status], COUNT(*) AS cnt FROM [dbo].[users] AS [u] GROUP BY [u].[status] HAVING [u].[status] > @p0 AND [u].[status] < @p1;', N'@p0 tinyint, @p1 tinyint', @p0 = 5, @p1 = 100;",
             "params": []
           },
-          "raw": "SELECT [u].[status] AS [status], COUNT(*) AS cnt FROM [dbo].[users] AS [u] GROUP BY [u].[status] HAVING [u].[status] > 5 [u].[status] < 100;"
+          "raw": "SELECT [u].[status] AS [status], COUNT(*) AS cnt FROM [dbo].[users] AS [u] GROUP BY [u].[status] HAVING [u].[status] > 5 AND [u].[status] < 100;"
         },
         "mysql": {
           "prepared": {
-            "sql": "SELECT `u`.`status` AS `status`, COUNT(*) AS cnt FROM `users` AS `u` GROUP BY `u`.`status` HAVING `u`.`status` > ? `u`.`status` < ?;",
+            "sql": "SELECT `u`.`status` AS `status`, COUNT(*) AS cnt FROM `users` AS `u` GROUP BY `u`.`status` HAVING `u`.`status` > ? AND `u`.`status` < ?;",
             "params": [
               {
                 "t": "num",
@@ -6923,11 +6906,11 @@
               }
             ]
           },
-          "raw": "SELECT `u`.`status` AS `status`, COUNT(*) AS cnt FROM `users` AS `u` GROUP BY `u`.`status` HAVING `u`.`status` > 5 `u`.`status` < 100;"
+          "raw": "SELECT `u`.`status` AS `status`, COUNT(*) AS cnt FROM `users` AS `u` GROUP BY `u`.`status` HAVING `u`.`status` > 5 AND `u`.`status` < 100;"
         },
         "postgres": {
           "prepared": {
-            "sql": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"public\".\"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > $1 \"u\".\"status\" < $2;",
+            "sql": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"public\".\"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > $1 AND \"u\".\"status\" < $2;",
             "params": [
               {
                 "t": "num",
@@ -6939,11 +6922,11 @@
               }
             ]
           },
-          "raw": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"public\".\"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > 5 \"u\".\"status\" < 100;"
+          "raw": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"public\".\"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > 5 AND \"u\".\"status\" < 100;"
         },
         "sqlite": {
           "prepared": {
-            "sql": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > ? \"u\".\"status\" < ?;",
+            "sql": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > ? AND \"u\".\"status\" < ?;",
             "params": [
               {
                 "t": "num",
@@ -6955,13 +6938,13 @@
               }
             ]
           },
-          "raw": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > 5 \"u\".\"status\" < 100;"
+          "raw": "SELECT \"u\".\"status\" AS \"status\", COUNT(*) AS cnt FROM \"users\" AS \"u\" GROUP BY \"u\".\"status\" HAVING \"u\".\"status\" > 5 AND \"u\".\"status\" < 100;"
         }
       }
     },
     {
       "name": "having with LIKE and NOT LIKE renders the operator",
-      "note": "Regression. HAVING takes the same WhereOperator as WHERE, but its operator switch omitted Like and NotLike, so the operator was silently dropped (`HAVING \"x\".\"y\"  $1`) while the value was still bound — an invalid statement. A port must render HAVING and WHERE operators from the same table.",
+      "note": "Regression. HAVING takes the same WhereOperator as WHERE, but its operator switch omitted Like and NotLike, so the operator was silently dropped (`HAVING \"x\".\"y\"  $1`) while the value was still bound \u2014 an invalid statement. A port must render HAVING and WHERE operators from the same table.",
       "ops": [
         {
           "op": "selectColumn",
@@ -7122,7 +7105,7 @@
     },
     {
       "name": "order by direction none renders desc",
-      "note": "The trap in ORDER BY. The direction enum has three members (Ascending, Descending, None) but the parser tests only `direction == Ascending` and falls to DESC for everything else — so None renders DESC, not ASC and not a bare column. A Dart port that maps None to the dialect default, or that defaults an unset direction to ASC, silently reverses the sort order of every such query.",
+      "note": "The trap in ORDER BY. The direction enum has three members (Ascending, Descending, None) but the parser tests only `direction == Ascending` and falls to DESC for everything else \u2014 so None renders DESC, not ASC and not a bare column. A Dart port that maps None to the dialect default, or that defaults an unset direction to ASC, silently reverses the sort order of every such query.",
       "ops": [
         {
           "op": "selectAll"
@@ -7152,14 +7135,14 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[active] = @p0 ORDER BY [u].[name] DESC;', N'@p0 bit', @p0 = 1;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[active] = @p0 ORDER BY [u].[name];', N'@p0 bit', @p0 = 1;",
             "params": []
           },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[active] = true ORDER BY [u].[name] DESC;"
+          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[active] = true ORDER BY [u].[name];"
         },
         "mysql": {
           "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`active` = ? ORDER BY `u`.`name` DESC;",
+            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`active` = ? ORDER BY `u`.`name`;",
             "params": [
               {
                 "t": "bool",
@@ -7167,11 +7150,11 @@
               }
             ]
           },
-          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`active` = true ORDER BY `u`.`name` DESC;"
+          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`active` = true ORDER BY `u`.`name`;"
         },
         "postgres": {
           "prepared": {
-            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"active\" = $1 ORDER BY \"u\".\"name\" DESC;",
+            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"active\" = $1 ORDER BY \"u\".\"name\";",
             "params": [
               {
                 "t": "bool",
@@ -7179,11 +7162,11 @@
               }
             ]
           },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"active\" = true ORDER BY \"u\".\"name\" DESC;"
+          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"active\" = true ORDER BY \"u\".\"name\";"
         },
         "sqlite": {
           "prepared": {
-            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"active\" = ? ORDER BY \"u\".\"name\" DESC;",
+            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"active\" = ? ORDER BY \"u\".\"name\";",
             "params": [
               {
                 "t": "bool",
@@ -7191,13 +7174,13 @@
               }
             ]
           },
-          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"active\" = true ORDER BY \"u\".\"name\" DESC;"
+          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"active\" = true ORDER BY \"u\".\"name\";"
         }
       }
     },
     {
       "name": "order by raw mixed with an order by column",
-      "note": "The raw fragment is emitted verbatim and keeps its position in the comma list. Its single quotes are NOT escaped for the raw render, but MSSQL's sp_executesql doubles them ('' ) when wrapping the statement — that asymmetry is the whole point of this case.",
+      "note": "The raw fragment is emitted verbatim and keeps its position in the comma list. Its single quotes are NOT escaped for the raw render, but MSSQL's sp_executesql doubles them ('' ) when wrapping the statement \u2014 that asymmetry is the whole point of this case.",
       "ops": [
         {
           "op": "selectAll"
@@ -7276,7 +7259,7 @@
     },
     {
       "name": "limit only without an order by",
-      "note": "Highest-value divergence in this area, and the one that pins the top()/limit() split. MySQL/Postgres/SQLite emit `LIMIT 10` — legal and unordered. MSSQL renders EVERY limit as OFFSET/FETCH pagination, and T-SQL accepts OFFSET/FETCH only alongside an ORDER BY (Msg 102), so MSSQL REJECTS this outright and the case pins an error rather than SQL. `.limit()` is pagination and needs an order to page against; `.top(n)` is the designer's manual, SQL-Server-only row cap and the tool for an unordered one. A port that quietly emits `TOP (10)` here instead of throwing has conflated the two, and produces a query the caller never asked for. Since 7.0.0 that guard is the only thing standing between this op-list and a TOP: before, a port could have explained the missing TOP away as the automatic cap's explicit-limit suppression rule, which no longer exists.",
+      "note": "Highest-value divergence in this area, and the one that pins the top()/limit() split. MySQL/Postgres/SQLite emit `LIMIT 10` \u2014 legal and unordered. MSSQL renders EVERY limit as OFFSET/FETCH pagination, and T-SQL accepts OFFSET/FETCH only alongside an ORDER BY (Msg 102), so MSSQL REJECTS this outright and the case pins an error rather than SQL. `.limit()` is pagination and needs an order to page against; `.top(n)` is the designer's manual, SQL-Server-only row cap and the tool for an unordered one. A port that quietly emits `TOP (10)` here instead of throwing has conflated the two, and produces a query the caller never asked for. Since 7.0.0 that guard is the only thing standing between this op-list and a TOP: before, a port could have explained the missing TOP away as the automatic cap's explicit-limit suppression rule, which no longer exists.",
       "ops": [
         {
           "op": "selectAll"
@@ -7320,7 +7303,7 @@
     },
     {
       "name": "limit and offset with an order by",
-      "note": "Byte-exact whitespace matters: the LIMIT..OFFSET dialects emit a DOUBLE space — `LIMIT 10  OFFSET 20` — because the emitter appends a separator space and then a snippet that already begins with one. Ugly, and frozen. MSSQL instead emits `OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY`, i.e. the two numbers appear in the OPPOSITE order to LIMIT..OFFSET; swapping them is an easy port bug that still produces valid SQL and wrong pages.",
+      "note": "Byte-exact whitespace matters: the LIMIT..OFFSET dialects emit a DOUBLE space \u2014 `LIMIT 10  OFFSET 20` \u2014 because the emitter appends a separator space and then a snippet that already begins with one. Ugly, and frozen. MSSQL instead emits `OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY`, i.e. the two numbers appear in the OPPOSITE order to LIMIT..OFFSET; swapping them is an easy port bug that still produces valid SQL and wrong pages.",
       "ops": [
         {
           "op": "selectAll"
@@ -7378,7 +7361,7 @@
     },
     {
       "name": "offset only with an order by and no where clause",
-      "note": "Offset without a limit, and the four grammars that disagree about how to spell it. Postgres is the only dialect with a legal standalone OFFSET, so it emits a bare `  OFFSET 20` — note the LEADING double space, deliberate and pinned in detail by 'offset with a where and no limit: only postgres keeps the doubled space'. MySQL and SQLite cannot parse a bare OFFSET at all (ERROR 1064 / `near \"OFFSET\"`), so each emits its own \"no upper bound\" sentinel limit in front of it: `LIMIT 18446744073709551615` (2^64-1, the documented MySQL idiom — 2^64 is itself a syntax error) and `LIMIT -1`. Those sentinels are grammar, not a cap: they bound nothing, and they are followed by a single space because the extra separator is only added when an explicit limit was set. MSSQL emits `OFFSET 20 ROWS` with no FETCH, which is valid T-SQL. One intent, four spellings; a port that picks one and applies it everywhere breaks three dialects. Two dead contracts a port must not resurrect: 6.x synthesized a `LIMIT 1000` / `FETCH NEXT 1000 ROWS ONLY` cap here because there was no WHERE, and before 6.0.0 MSSQL emitted `TOP (1000) ... OFFSET 20 ROWS`, which SQL Server never accepted. 7.0.0 removed the cap outright.",
+      "note": "Offset without a limit, and the four grammars that disagree about how to spell it. Postgres is the only dialect with a legal standalone OFFSET, so it emits a bare `  OFFSET 20` \u2014 note the LEADING double space, deliberate and pinned in detail by 'offset with a where and no limit: only postgres keeps the doubled space'. MySQL and SQLite cannot parse a bare OFFSET at all (ERROR 1064 / `near \"OFFSET\"`), so each emits its own \"no upper bound\" sentinel limit in front of it: `LIMIT 18446744073709551615` (2^64-1, the documented MySQL idiom \u2014 2^64 is itself a syntax error) and `LIMIT -1`. Those sentinels are grammar, not a cap: they bound nothing, and they are followed by a single space because the extra separator is only added when an explicit limit was set. MSSQL emits `OFFSET 20 ROWS` with no FETCH, which is valid T-SQL. One intent, four spellings; a port that picks one and applies it everywhere breaks three dialects. Two dead contracts a port must not resurrect: 6.x synthesized a `LIMIT 1000` / `FETCH NEXT 1000 ROWS ONLY` cap here because there was no WHERE, and before 6.0.0 MSSQL emitted `TOP (1000) ... OFFSET 20 ROWS`, which SQL Server never accepted. 7.0.0 removed the cap outright.",
       "ops": [
         {
           "op": "selectAll"
@@ -7432,7 +7415,7 @@
     },
     {
       "name": "offset only with a where clause renders exactly as it does without one",
-      "note": "The companion to 'offset only with an order by and no where clause' — the same op-list plus a WHERE. Compare the two goldens: the limit/offset tails are byte-identical on all four dialects, and that is now the entire point. Until 7.0.0 a WHERE was what marked a query 'bounded' and suppressed the automatic row cap, so the two cases had different tails everywhere: no WHERE meant `LIMIT 1000` / `FETCH NEXT 1000 ROWS ONLY`, a WHERE meant the sentinel-or-bare-OFFSET rendering seen here. 7.0.0 removed the cap, and with it the only reason defaultLimitOffset ever read `whereStates`. A port must not carry a WHERE check into its limit/offset code at all: nothing about pagination looks at the predicate now.",
+      "note": "The companion to 'offset only with an order by and no where clause' \u2014 the same op-list plus a WHERE. Compare the two goldens: the limit/offset tails are byte-identical on all four dialects, and that is now the entire point. Until 7.0.0 a WHERE was what marked a query 'bounded' and suppressed the automatic row cap, so the two cases had different tails everywhere: no WHERE meant `LIMIT 1000` / `FETCH NEXT 1000 ROWS ONLY`, a WHERE meant the sentinel-or-bare-OFFSET rendering seen here. 7.0.0 removed the cap, and with it the only reason defaultLimitOffset ever read `whereStates`. A port must not carry a WHERE check into its limit/offset code at all: nothing about pagination looks at the predicate now.",
       "ops": [
         {
           "op": "selectAll"
@@ -7547,7 +7530,7 @@
     },
     {
       "name": "limit zero is treated as unset",
-      "note": "0 is the sentinel for 'no limit' — not a request for zero rows. to-sql only calls the limit/offset parser when `limit > 0 || offset > 0`, so limit(0) emits no LIMIT clause and the golden is byte-identical to the seed case on all four dialects. A Dart port modelling limit as `int?` must make null and 0 behave identically here, or it will emit `LIMIT 0` and return nothing. Before 7.0.0 the case had a second half: MSSQL's safety net tested `limit === 0`, so limit(0) brought `TOP (1000)` BACK and the MSSQL golden was not the seed case's. There is no cap left to bring back.",
+      "note": "0 is the sentinel for 'no limit' \u2014 not a request for zero rows. to-sql only calls the limit/offset parser when `limit > 0 || offset > 0`, so limit(0) emits no LIMIT clause and the golden is byte-identical to the seed case on all four dialects. A Dart port modelling limit as `int?` must make null and 0 behave identically here, or it will emit `LIMIT 0` and return nothing. Before 7.0.0 the case had a second half: MSSQL's safety net tested `limit === 0`, so limit(0) brought `TOP (1000)` BACK and the MSSQL golden was not the seed case's. There is no cap left to bring back.",
       "ops": [
         {
           "op": "selectAll"
@@ -7624,7 +7607,7 @@
     },
     {
       "name": "mssql top with a where clause",
-      "note": "TOP and WHERE in one statement: the TOP goes in through the select hook and lands before the column list, the WHERE is appended after the FROM — `SELECT TOP (5) * FROM [dbo].[users] AS [u] WHERE [u].[active] = @p0`. Until 7.0.0 the case earned its keep by pinning a precedence: an explicit TOP beat both the automatic cap and the WHERE-suppresses-the-cap rule, so `TOP (5)` survived in a position where `TOP (1000)` would have been suppressed. With the cap gone there is no precedence left to resolve — an explicit top renders whenever it is set and positive, nothing else ever writes a TOP, and the WHERE is irrelevant to it.",
+      "note": "TOP and WHERE in one statement: the TOP goes in through the select hook and lands before the column list, the WHERE is appended after the FROM \u2014 `SELECT TOP (5) * FROM [dbo].[users] AS [u] WHERE [u].[active] = @p0`. Until 7.0.0 the case earned its keep by pinning a precedence: an explicit TOP beat both the automatic cap and the WHERE-suppresses-the-cap rule, so `TOP (5)` survived in a position where `TOP (1000)` would have been suppressed. With the cap gone there is no precedence left to resolve \u2014 an explicit top renders whenever it is set and positive, nothing else ever writes a TOP, and the WHERE is irrelevant to it.",
       "dialects": [
         "mssql"
       ],
@@ -7664,7 +7647,7 @@
     },
     {
       "name": "mssql top combined with limit is refused",
-      "note": "defaultLimitOffset throws when MSSQL has both a `top` in customState and a limit/offset: they are two different pagination mechanisms and T-SQL rejects them in one SELECT (Msg 10741). The subtle pin is WHICH error. This op-list trips two guards — it has a limit and no ORDER BY, so MSSQL's 'ORDER BY is required when using LIMIT' guard is eligible too — but the TOP/LIMIT conflict is raised while the clause text is still being built and the ORDER BY guards only after it, so the TOP/LIMIT message is the one a port must produce. Note also that the conflict check reads customState presence, not the rendered SQL, so a port must track 'top was set by the caller' as its own state; see 'top zero is absent for rendering but present for the limit conflict check', where a top that renders nothing still throws. (The pre-7.0.0 note here justified the presence test by claiming the implicit TOP (1000) coexisted with an OFFSET elsewhere in the corpus and therefore never threw. That was never true — MSSQL spelled the cap `FETCH NEXT 1000 ROWS ONLY` precisely because TOP and OFFSET cannot share a SELECT. The presence test is right for the reason above, not that one.)",
+      "note": "defaultLimitOffset throws when MSSQL has both a `top` in customState and a limit/offset: they are two different pagination mechanisms and T-SQL rejects them in one SELECT (Msg 10741). The subtle pin is WHICH error. This op-list trips two guards \u2014 it has a limit and no ORDER BY, so MSSQL's 'ORDER BY is required when using LIMIT' guard is eligible too \u2014 but the TOP/LIMIT conflict is raised while the clause text is still being built and the ORDER BY guards only after it, so the TOP/LIMIT message is the one a port must produce. Note also that the conflict check reads customState presence, not the rendered SQL, so a port must track 'top was set by the caller' as its own state; see 'top zero is absent for rendering but present for the limit conflict check', where a top that renders nothing still throws. (The pre-7.0.0 note here justified the presence test by claiming the implicit TOP (1000) coexisted with an OFFSET elsewhere in the corpus and therefore never threw. That was never true \u2014 MSSQL spelled the cap `FETCH NEXT 1000 ROWS ONLY` precisely because TOP and OFFSET cannot share a SELECT. The presence test is right for the reason above, not that one.)",
       "dialects": [
         "mssql"
       ],
@@ -7694,7 +7677,7 @@
     },
     {
       "name": "top is silently ignored by the non-mssql dialects",
-      "note": "top() lives on the shared builder, not on the MSSQL builder, so it is callable everywhere — and everywhere else it is a no-op: no TOP, no LIMIT, no clause at all. The golden is byte-identical to the seed case. A Dart port that throws 'unsupported' on top() for MySQL, or that translates it into LIMIT, diverges. It also must not throw the TOP+LIMIT error outside MSSQL — that guard lives inside the MSSQL branch of defaultLimitOffset. (The old note explained the empty tail by saying these three dialects had no unbounded-query safety net, unlike MSSQL. Since 7.0.0 no dialect has one: an unbounded SELECT is unbounded everywhere unless the caller caps it.)",
+      "note": "top() lives on the shared builder, not on the MSSQL builder, so it is callable everywhere \u2014 and everywhere else it is a no-op: no TOP, no LIMIT, no clause at all. The golden is byte-identical to the seed case. A Dart port that throws 'unsupported' on top() for MySQL, or that translates it into LIMIT, diverges. It also must not throw the TOP+LIMIT error outside MSSQL \u2014 that guard lives inside the MSSQL branch of defaultLimitOffset. (The old note explained the empty tail by saying these three dialects had no unbounded-query safety net, unlike MSSQL. Since 7.0.0 no dialect has one: an unbounded SELECT is unbounded everywhere unless the caller caps it.)",
       "dialects": [
         "mysql",
         "postgres",
@@ -7740,7 +7723,7 @@
     },
     {
       "name": "subquery with group by having order by and limit",
-      "note": "An EXPLICIT limit inside a subquery is rendered, and rendered per dialect: `LIMIT 5` on MySQL/Postgres/SQLite, `OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY` on MSSQL — note MSSQL pays for a limit with an OFFSET the caller never gave, because T-SQL has no FETCH without one. The subquery's orderByRaw is what makes that legal: MSSQL's OFFSET/FETCH requires an ORDER BY (Msg 102) and the guard reads the inner state, so dropping the inner order by would turn this case into a throw. The IN subquery is an inner statement and carries no trailing `;`, so the statement has exactly one, at the very end. (Before 7.0.0 the note also said inner statements were exempt from the automatic cap, and that the outer query's IN counted as a WHERE and so 'bounded' it. Both rules are gone: no statement gets a cap, inner or outer, and nothing reads whereStates for pagination.)",
+      "note": "An EXPLICIT limit inside a subquery is rendered, and rendered per dialect: `LIMIT 5` on MySQL/Postgres/SQLite, `OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY` on MSSQL \u2014 note MSSQL pays for a limit with an OFFSET the caller never gave, because T-SQL has no FETCH without one. The subquery's orderByRaw is what makes that legal: MSSQL's OFFSET/FETCH requires an ORDER BY (Msg 102) and the guard reads the inner state, so dropping the inner order by would turn this case into a throw. The IN subquery is an inner statement and carries no trailing `;`, so the statement has exactly one, at the very end. (Before 7.0.0 the note also said inner statements were exempt from the automatic cap, and that the outer query's IN counted as a WHERE and so 'bounded' it. Both rules are gone: no statement gets a cap, inner or outer, and nothing reads whereStates for pagination.)",
       "ops": [
         {
           "op": "selectAll"
@@ -7819,7 +7802,7 @@
     },
     {
       "name": "full clause order: where group by having order by limit offset",
-      "note": "Pins the clause emission order end to end — SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET — and, with it, the bound-param order (WHERE value first, HAVING value second). This is the case that fails loudly if a port renders HAVING before GROUP BY or appends LIMIT before ORDER BY.",
+      "note": "Pins the clause emission order end to end \u2014 SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT/OFFSET \u2014 and, with it, the bound-param order (WHERE value first, HAVING value second). This is the case that fails loudly if a port renders HAVING before GROUP BY or appends LIMIT before ORDER BY.",
       "ops": [
         {
           "op": "selectColumn",
@@ -7934,7 +7917,7 @@
     },
     {
       "name": "insert single row binds every value in column order",
-      "note": "The value list binds positionally against the column list: name, age, score, active. MSSQL also declares a per-parameter T-SQL type inferred from each value — int 30 becomes tinyint, double 9.99 becomes float, bool becomes bit, string becomes nvarchar(max) — so a port that mis-tags a value emits a different @pN declaration and SQL Server rejects or silently coerces the row.",
+      "note": "The value list binds positionally against the column list: name, age, score, active. MSSQL also declares a per-parameter T-SQL type inferred from each value \u2014 int 30 becomes tinyint, double 9.99 becomes float, bool becomes bit, string becomes nvarchar(max) \u2014 so a port that mis-tags a value emits a different @pN declaration and SQL Server rejects or silently coerces the row.",
       "ops": [
         {
           "op": "insertInto",
@@ -8055,7 +8038,7 @@
     },
     {
       "name": "insert into with owner",
-      "note": "MySQL is the divergence to watch. A SELECT's FROM rejects an owner outright ('MySQL does not support table owners', src/parser/default-from.ts), but the INSERT parser never checks — so MySQL happily emits `sales`.`orders` here. A Dart port that hoists the owner check into one shared helper will throw where TypeScript emits, and fail this case.",
+      "note": "MySQL rejects non-empty table owners on FROM, JOIN, INSERT, UPDATE, and DELETE \u2014 same guard across clauses. Other dialects emit the qualified name.",
       "ops": [
         {
           "op": "insertIntoWithOwner",
@@ -8092,20 +8075,7 @@
           "raw": "INSERT INTO [sales].[orders] ([product_id], [quantity]) VALUES (101, 5);"
         },
         "mysql": {
-          "prepared": {
-            "sql": "INSERT INTO `sales`.`orders` (`product_id`, `quantity`) VALUES (?, ?);",
-            "params": [
-              {
-                "t": "num",
-                "v": 101
-              },
-              {
-                "t": "num",
-                "v": 5
-              }
-            ]
-          },
-          "raw": "INSERT INTO `sales`.`orders` (`product_id`, `quantity`) VALUES (101, 5);"
+          "throws": "Insert: MySQL does not support table owners"
         },
         "postgres": {
           "prepared": {
@@ -8214,7 +8184,7 @@
     },
     {
       "name": "insert with null datetime and quoted string values",
-      "note": "The NULL still occupies a placeholder slot: the bound params are [datetime, null, string]. A port that filters nulls out of the value list when collecting bound params shifts every later parameter one position left and writes values into the wrong columns while still executing cleanly. MSSQL declares both the Date and the null as nvarchar(max), inlines the date as a quoted ISO-8601 string and the null as the bare word NULL, and doubles the apostrophe in the string. parseRaw inlines the null as the EMPTY STRING — debug rendering only, never executable.",
+      "note": "The NULL still occupies a placeholder slot: the bound params are [datetime, null, string]. A port that filters nulls out of the value list when collecting bound params shifts every later parameter one position left and writes values into the wrong columns while still executing cleanly. MSSQL declares both the Date and the null as nvarchar(max), inlines the date as a quoted ISO-8601 string and the null as the bare word NULL, and doubles the apostrophe in the string. parseRaw inlines the null as the EMPTY STRING \u2014 debug rendering only, never executable.",
       "ops": [
         {
           "op": "insertInto",
@@ -8393,7 +8363,7 @@
     },
     {
       "name": "insert multiple rows",
-      "note": "Each insertValues call appends a row; the rows join with ', ' and the placeholders keep counting across row boundaries, so Postgres numbers them ($1, $2), ($3, $4) — not restarting per row.",
+      "note": "Each insertValues call appends a row; the rows join with ', ' and the placeholders keep counting across row boundaries, so Postgres numbers them ($1, $2), ($3, $4) \u2014 not restarting per row.",
       "ops": [
         {
           "op": "insertInto",
@@ -8517,7 +8487,7 @@
     },
     {
       "name": "insert raw",
-      "note": "The raw fragment is emitted verbatim plus the terminating ';' — no identifier quoting, no owner, no parameters. MSSQL still wraps it in sp_executesql, which doubles the caller's single quotes.",
+      "note": "The raw fragment is emitted verbatim plus the terminating ';' \u2014 no identifier quoting, no owner, no parameters. MSSQL still wraps it in sp_executesql, which doubles the caller's single quotes.",
       "ops": [
         {
           "op": "insertRaw",
@@ -8616,7 +8586,7 @@
     },
     {
       "name": "insert values without insert into is refused",
-      "note": "insertColumns/insertValues do NOT make the builder an INSERT — only insertInto/insertIntoWithOwner/insertRaw set the query type. Without one, the builder is still a SELECT and fails in the SELECT parser, which is why the error mentions select state and not INSERT. The parser's own 'No insert state provided' guard is unreachable through the public API. Pinned so a port fails the same way with the same message.",
+      "note": "insertColumns/insertValues do NOT make the builder an INSERT \u2014 only insertInto/insertIntoWithOwner/insertRaw set the query type. Without one, the builder is still a SELECT and fails in the SELECT parser, which is why the error mentions select state and not INSERT. The parser's own 'No insert state provided' guard is unreachable through the public API. Pinned so a port fails the same way with the same message.",
       "ops": [
         {
           "op": "insertColumns",
@@ -8651,7 +8621,7 @@
     },
     {
       "name": "update with alias and one set",
-      "note": "The headline UPDATE divergence. T-SQL has no `UPDATE tbl AS alias`, so MSSQL emits `UPDATE [u] SET ... FROM [dbo].[users] AS [u]` — the alias alone after UPDATE, the real table in a trailing FROM. Every other dialect emits `UPDATE tbl AS u SET ...` and no FROM. Get this wrong on MSSQL and the statement does not parse at all.",
+      "note": "The headline UPDATE divergence. T-SQL has no `UPDATE tbl AS alias`, so MSSQL emits `UPDATE [u] SET ... FROM [dbo].[users] AS [u]` \u2014 the alias alone after UPDATE, the real table in a trailing FROM. Every other dialect emits `UPDATE tbl AS u SET ...` and no FROM. Get this wrong on MSSQL and the statement does not parse at all.",
       "ops": [
         {
           "op": "updateTable",
@@ -8779,7 +8749,7 @@
     },
     {
       "name": "update with owner and alias",
-      "note": "MSSQL qualifies the table in the trailing FROM, not after UPDATE: `UPDATE [o] SET ... FROM [sales].[orders] AS [o]`. As with INSERT, MySQL emits the owner here rather than rejecting it — the 'MySQL does not support table owners' check exists only in the FROM parser.",
+      "note": "MSSQL qualifies the table in the trailing FROM, not after UPDATE: `UPDATE [o] SET ... FROM [sales].[orders] AS [o]`. MySQL rejects non-empty owners on UPDATE (and INSERT/DELETE/JOIN/FROM) with ParserArea.Update.",
       "ops": [
         {
           "op": "updateTableWithOwner",
@@ -8805,16 +8775,7 @@
           "raw": "UPDATE [o] SET [status] = shipped FROM [sales].[orders] AS [o];"
         },
         "mysql": {
-          "prepared": {
-            "sql": "UPDATE `sales`.`orders` AS `o` SET `status` = ?;",
-            "params": [
-              {
-                "t": "string",
-                "v": "shipped"
-              }
-            ]
-          },
-          "raw": "UPDATE `sales`.`orders` AS `o` SET `status` = shipped;"
+          "throws": "Update: MySQL does not support table owners"
         },
         "postgres": {
           "prepared": {
@@ -8844,7 +8805,7 @@
     },
     {
       "name": "update set values bind before where values",
-      "note": "THE ordering pin for UPDATE. SET values are emitted before WHERE values, so they bind first: Postgres numbers the SET values $1, $2 and the WHERE values $3, $4, and the positional dialects bind [John, 31, 42, 'deleted'] in exactly that order. setRaw contributes NO bound value and NO placeholder — it must not consume an index. A port that renders WHERE before SET, or that counts setRaw as a parameter, produces an UPDATE that writes the wrong values to the wrong rows and still executes without error.",
+      "note": "THE ordering pin for UPDATE. SET values are emitted before WHERE values, so they bind first: Postgres numbers the SET values $1, $2 and the WHERE values $3, $4, and the positional dialects bind [John, 31, 42, 'deleted'] in exactly that order. setRaw contributes NO bound value and NO placeholder \u2014 it must not consume an index. A port that renders WHERE before SET, or that counts setRaw as a parameter, produces an UPDATE that writes the wrong values to the wrong rows and still executes without error.",
       "ops": [
         {
           "op": "updateTable",
@@ -8979,7 +8940,7 @@
     },
     {
       "name": "update set null keeps its placeholder slot",
-      "note": "Setting a column to NULL binds a null parameter — it is not skipped and not rendered as a literal NULL in the SET list. Params are [null, datetime, 7]: drop the null and the datetime binds to deleted_at and the id binds to updated_at, so the UPDATE hits every row it should not. See the 'never filter' comment in SqlHelper.getValues.",
+      "note": "Setting a column to NULL binds a null parameter \u2014 it is not skipped and not rendered as a literal NULL in the SET list. Params are [null, datetime, 7]: drop the null and the datetime binds to deleted_at and the id binds to updated_at, so the UPDATE hits every row it should not. See the 'never filter' comment in SqlHelper.getValues.",
       "ops": [
         {
           "op": "updateTable",
@@ -9090,22 +9051,22 @@
       ],
       "expect": {
         "mssql": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "mysql": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "postgres": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "sqlite": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         }
       }
     },
     {
       "name": "update set without update table is refused",
-      "note": "set()/setRaw() do not make the builder an UPDATE — only updateTable/updateTableWithOwner do, and both push the table at the same time. So the parser's 'UPDATE requires a table' guard (and the identical DELETE one) is unreachable through the public API: omit updateTable and the builder is still a SELECT, failing in the SELECT parser. The message pinned here is the one a port must reproduce — not a friendlier 'UPDATE requires a table'.",
+      "note": "set()/setRaw() do not make the builder an UPDATE \u2014 only updateTable/updateTableWithOwner do, and both push the table at the same time. So the parser's 'UPDATE requires a table' guard (and the identical DELETE one) is unreachable through the public API: omit updateTable and the builder is still a SELECT, failing in the SELECT parser. The message pinned here is the one a port must reproduce \u2014 not a friendlier 'UPDATE requires a table'.",
       "ops": [
         {
           "op": "set",
@@ -9143,7 +9104,7 @@
     },
     {
       "name": "delete with alias and where",
-      "note": "The headline DELETE divergence, mirroring UPDATE: T-SQL has no `DELETE FROM tbl AS alias`, so MSSQL emits `DELETE [u] FROM [dbo].[users] AS [u] WHERE ...` while the other three emit `DELETE FROM tbl AS u WHERE ...`. The Delete branch of to-sql returns as soon as it has written the WHERE and the semicolon, so nothing downstream of it — the select hook, limit/offset — can reach a write statement at all. That structural early return, not a rule about writes, is why MSSQL's TOP has never appeared on a DELETE. (Before 7.0.0 the same early return was also what kept the automatic `TOP (1000)` off an unfiltered DELETE.)",
+      "note": "The headline DELETE divergence, mirroring UPDATE: T-SQL has no `DELETE FROM tbl AS alias`, so MSSQL emits `DELETE [u] FROM [dbo].[users] AS [u] WHERE ...` while the other three emit `DELETE FROM tbl AS u WHERE ...`. The Delete branch of to-sql returns as soon as it has written the WHERE and the semicolon, so nothing downstream of it \u2014 the select hook, limit/offset \u2014 can reach a write statement at all. That structural early return, not a rule about writes, is why MSSQL's TOP has never appeared on a DELETE. (Before 7.0.0 the same early return was also what kept the automatic `TOP (1000)` off an unfiltered DELETE.)",
       "ops": [
         {
           "op": "deleteFrom",
@@ -9209,7 +9170,7 @@
     },
     {
       "name": "delete without alias",
-      "note": "With no alias every dialect — MSSQL included — takes the plain `DELETE FROM <table>` form. This is an unfiltered DELETE and the builder emits it without complaint: there is no guard requiring a WHERE.",
+      "note": "With no alias every dialect \u2014 MSSQL included \u2014 takes the plain `DELETE FROM <table>` form. This is an unfiltered DELETE and the builder emits it without complaint: there is no guard requiring a WHERE.",
       "ops": [
         {
           "op": "deleteFrom",
@@ -9283,20 +9244,7 @@
           "raw": "DELETE [u] FROM [archive].[users] AS [u] WHERE [u].[id] IN (1, 2);"
         },
         "mysql": {
-          "prepared": {
-            "sql": "DELETE FROM `archive`.`users` AS `u` WHERE `u`.`id` IN (?, ?);",
-            "params": [
-              {
-                "t": "num",
-                "v": 1
-              },
-              {
-                "t": "num",
-                "v": 2
-              }
-            ]
-          },
-          "raw": "DELETE FROM `archive`.`users` AS `u` WHERE `u`.`id` IN (1, 2);"
+          "throws": "Delete: MySQL does not support table owners"
         },
         "postgres": {
           "prepared": {
@@ -9334,7 +9282,7 @@
     },
     {
       "name": "cte with a bound value binds before the outer query",
-      "note": "Pins parameter ORDER, not just SQL shape. The WITH clause is emitted first, so its values occupy the first placeholder slots: Postgres numbers the CTE's value $1 and the outer WHERE's value $2. A port that walks the outer clauses before the CTE still produces identical-looking SQL but binds the values swapped — the query silently returns wrong rows instead of failing.",
+      "note": "Pins parameter ORDER, not just SQL shape. The WITH clause is emitted first, so its values occupy the first placeholder slots: Postgres numbers the CTE's value $1 and the outer WHERE's value $2. A port that walks the outer clauses before the CTE still produces identical-looking SQL but binds the values swapped \u2014 the query silently returns wrong rows instead of failing.",
       "ops": [
         {
           "op": "cte",
@@ -9582,7 +9530,7 @@
     },
     {
       "name": "recursive cte with a union all body",
-      "note": "The canonical recursive shape: anchor UNION ALL recursive member, inside the CTE body. Two things are pinned. (1) `WITH RECURSIVE` is emitted for EVERY dialect, including MSSQL — where `RECURSIVE` is not a T-SQL keyword and the statement would not actually run. That is the frozen contract; a port must not 'fix' it. (2) Value order inside the body: the anchor's value binds before the recursive member's, and both bind before any outer value.",
+      "note": "The canonical recursive shape: anchor UNION ALL recursive member, inside the CTE body. (1) Non-MSSQL dialects emit `WITH RECURSIVE`; MSSQL emits bare `WITH` because `RECURSIVE` is not a T-SQL keyword. (2) Value order inside the body: the anchor's value binds before the recursive member's, and both bind before any outer value.",
       "ops": [
         {
           "op": "cteRecursive",
@@ -9666,10 +9614,10 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH RECURSIVE [descendants] AS (SELECT [e].[id], [e].[manager_id] FROM [dbo].[employees] AS [e] WHERE [e].[id] = @p0 UNION ALL SELECT [e2].[id], [e2].[manager_id] FROM [dbo].[employees] AS [e2] WHERE [e2].[depth] < @p1) SELECT * FROM descendants AS d WHERE [d].[id] <> @p2;', N'@p0 tinyint, @p1 tinyint, @p2 tinyint', @p0 = 1, @p1 = 10, @p2 = 1;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH [descendants] AS (SELECT [e].[id], [e].[manager_id] FROM [dbo].[employees] AS [e] WHERE [e].[id] = @p0 UNION ALL SELECT [e2].[id], [e2].[manager_id] FROM [dbo].[employees] AS [e2] WHERE [e2].[depth] < @p1) SELECT * FROM descendants AS d WHERE [d].[id] <> @p2;', N'@p0 tinyint, @p1 tinyint, @p2 tinyint', @p0 = 1, @p1 = 10, @p2 = 1;",
             "params": []
           },
-          "raw": "WITH RECURSIVE [descendants] AS (SELECT [e].[id], [e].[manager_id] FROM [dbo].[employees] AS [e] WHERE [e].[id] = 1 UNION ALL SELECT [e2].[id], [e2].[manager_id] FROM [dbo].[employees] AS [e2] WHERE [e2].[depth] < 10) SELECT * FROM descendants AS d WHERE [d].[id] <> 1;"
+          "raw": "WITH [descendants] AS (SELECT [e].[id], [e].[manager_id] FROM [dbo].[employees] AS [e] WHERE [e].[id] = 1 UNION ALL SELECT [e2].[id], [e2].[manager_id] FROM [dbo].[employees] AS [e2] WHERE [e2].[depth] < 10) SELECT * FROM descendants AS d WHERE [d].[id] <> 1;"
         },
         "mysql": {
           "prepared": {
@@ -9735,7 +9683,7 @@
     },
     {
       "name": "one recursive cte promotes the whole with clause to recursive",
-      "note": "RECURSIVE is a property of the WITH clause, not of an individual CTE: a single cteRecursive anywhere in the list makes the keyword `WITH RECURSIVE` even though the first CTE here is not recursive. Declaration order is preserved regardless — the recursive one is NOT hoisted to the front.",
+      "note": "RECURSIVE is a property of the WITH clause, not of an individual CTE: a single cteRecursive anywhere in the list makes the clause recursive even though the first CTE here is not recursive. Non-MSSQL dialects emit `WITH RECURSIVE`; MSSQL emits bare `WITH`. Declaration order is preserved \u2014 the recursive one is NOT hoisted to the front.",
       "ops": [
         {
           "op": "cte",
@@ -9785,10 +9733,10 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH RECURSIVE [base] AS (SELECT * FROM [dbo].[categories] AS [c]), [tree] AS (SELECT * FROM base AS b) SELECT * FROM tree AS t WHERE [t].[depth] <= @p0;', N'@p0 tinyint', @p0 = 3;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH [base] AS (SELECT * FROM [dbo].[categories] AS [c]), [tree] AS (SELECT * FROM base AS b) SELECT * FROM tree AS t WHERE [t].[depth] <= @p0;', N'@p0 tinyint', @p0 = 3;",
             "params": []
           },
-          "raw": "WITH RECURSIVE [base] AS (SELECT * FROM [dbo].[categories] AS [c]), [tree] AS (SELECT * FROM base AS b) SELECT * FROM tree AS t WHERE [t].[depth] <= 3;"
+          "raw": "WITH [base] AS (SELECT * FROM [dbo].[categories] AS [c]), [tree] AS (SELECT * FROM base AS b) SELECT * FROM tree AS t WHERE [t].[depth] <= 3;"
         },
         "mysql": {
           "prepared": {
@@ -9830,7 +9778,7 @@
     },
     {
       "name": "cte raw body is emitted verbatim",
-      "note": "cteRaw text is passed through untouched — not quoted, not escaped, not scanned for placeholders — while the CTE NAME is still quoted with the dialect's identifier delimiters. The embedded single quotes survive into the MSSQL sp_executesql string as doubled quotes, because the whole statement is escaped once at the end.",
+      "note": "cteRaw text is passed through untouched \u2014 not quoted, not escaped, not scanned for placeholders \u2014 while the CTE NAME is still quoted with the dialect's identifier delimiters. The embedded single quotes survive into the MSSQL sp_executesql string as doubled quotes, because the whole statement is escaped once at the end.",
       "ops": [
         {
           "op": "cteRaw",
@@ -9987,7 +9935,7 @@
     },
     {
       "name": "cte referenced with fromTable is schema qualified",
-      "note": "A trap, pinned deliberately. `fromTable` always applies the dialect's default owner, so referencing a CTE that way emits `[dbo].[active_users]` on MSSQL and \"public\".\"active_users\" on Postgres — which does not resolve to the CTE. MySQL and SQLite have no default owner and come out fine. The dialect-neutral way to reference a CTE is fromRaw. A port must reproduce the qualification, not silently special-case CTE names.",
+      "note": "A trap, pinned deliberately. `fromTable` always applies the dialect's default owner, so referencing a CTE that way emits `[dbo].[active_users]` on MSSQL and \"public\".\"active_users\" on Postgres \u2014 which does not resolve to the CTE. MySQL and SQLite have no default owner and come out fine. The dialect-neutral way to reference a CTE is fromRaw. A port must reproduce the qualification, not silently special-case CTE names.",
       "ops": [
         {
           "op": "cte",
@@ -10092,7 +10040,7 @@
     },
     {
       "name": "cte with no from clause is refused",
-      "note": "Errors inside a CTE body propagate out of the outer parse — the CTE is walked as a full statement, not as opaque text.",
+      "note": "Errors inside a CTE body propagate out of the outer parse \u2014 the CTE is walked as a full statement, not as opaque text.",
       "ops": [
         {
           "op": "cte",
@@ -10128,7 +10076,7 @@
     },
     {
       "name": "mssql top is emitted inside a union branch but dropped inside a cte body",
-      "note": "An asymmetry in the MSSQL TOP hook, frozen as-is. The union parser threads the dialect's `beforeSelectColumns` hook into each branch, so an explicit `.top(3)` on a union branch renders `SELECT TOP (3)`. The CTE parser does NOT thread the hook, so the identical `.top(5)` on the CTE body renders nothing at all — the golden's CTE is a plain `SELECT [u].[id]`. Being an inner statement is not the reason: the hook never looks at `isInnerStatement`, which is exactly why the union branch keeps its TOP despite being one. Reaching the hook is the whole difference. A Dart port that threads the hook uniformly through both emits an extra TOP in the CTE and diverges. Since 7.0.0 removed the automatic cap, every TOP in this statement is one the caller wrote; the golden has exactly one, on the union branch.",
+      "note": "An asymmetry in the MSSQL TOP hook, frozen as-is. The union parser threads the dialect's `beforeSelectColumns` hook into each branch, so an explicit `.top(3)` on a union branch renders `SELECT TOP (3)`. The CTE parser does NOT thread the hook, so the identical `.top(5)` on the CTE body renders nothing at all \u2014 the golden's CTE is a plain `SELECT [u].[id]`. Being an inner statement is not the reason: the hook never looks at `isInnerStatement`, which is exactly why the union branch keeps its TOP despite being one. Reaching the hook is the whole difference. A Dart port that threads the hook uniformly through both emits an extra TOP in the CTE and diverges. Since 7.0.0 removed the automatic cap, every TOP in this statement is one the caller wrote; the golden has exactly one, on the union branch.",
       "dialects": [
         "mssql"
       ],
@@ -10195,16 +10143,16 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH [capped] AS (SELECT [u].[id] FROM [dbo].[users] AS [u]) SELECT [c].[id] FROM capped AS c WHERE [c].[id] > @p0 UNION ALL SELECT TOP (3) [a].[id] FROM [dbo].[admins] AS [a];', N'@p0 tinyint', @p0 = 0;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'WITH [capped] AS (SELECT TOP (5) [u].[id] FROM [dbo].[users] AS [u]) SELECT [c].[id] FROM capped AS c WHERE [c].[id] > @p0 UNION ALL SELECT TOP (3) [a].[id] FROM [dbo].[admins] AS [a];', N'@p0 tinyint', @p0 = 0;",
             "params": []
           },
-          "raw": "WITH [capped] AS (SELECT [u].[id] FROM [dbo].[users] AS [u]) SELECT [c].[id] FROM capped AS c WHERE [c].[id] > 0 UNION ALL SELECT TOP (3) [a].[id] FROM [dbo].[admins] AS [a];"
+          "raw": "WITH [capped] AS (SELECT TOP (5) [u].[id] FROM [dbo].[users] AS [u]) SELECT [c].[id] FROM capped AS c WHERE [c].[id] > 0 UNION ALL SELECT TOP (3) [a].[id] FROM [dbo].[admins] AS [a];"
         }
       }
     },
     {
       "name": "cte outer query and cte body both render without a top",
-      "note": "Frozen mainly for what is NOT here. Until 7.0.0 MSSQL's unbounded-query guard looked only at the OUTER statement — no WHERE, no LIMIT, not an inner statement — so `TOP (1000)` landed on this outer SELECT even though the real row source is the CTE, whose own WHERE could never reach the guard. 7.0.0 removed the cap: the golden now has no TOP anywhere, and a port that reintroduces one fails here. What the case still pins on its own: the CTE name is quoted in the WITH clause (`WITH [active_users] AS`) while the fromRaw reference to it is emitted verbatim and unquoted (`FROM active_users AS au`) — which is why fromRaw is the dialect-neutral way to reach a CTE, and 'cte referenced with fromTable is schema qualified' is the same query through fromTable, where the reference gets schema-qualified into something that does not resolve. The CTE body is an inner statement, so the statement's only `;` is the outer one.",
+      "note": "Frozen mainly for what is NOT here. Until 7.0.0 MSSQL's unbounded-query guard looked only at the OUTER statement \u2014 no WHERE, no LIMIT, not an inner statement \u2014 so `TOP (1000)` landed on this outer SELECT even though the real row source is the CTE, whose own WHERE could never reach the guard. 7.0.0 removed the cap: the golden now has no TOP anywhere, and a port that reintroduces one fails here. What the case still pins on its own: the CTE name is quoted in the WITH clause (`WITH [active_users] AS`) while the fromRaw reference to it is emitted verbatim and unquoted (`FROM active_users AS au`) \u2014 which is why fromRaw is the dialect-neutral way to reach a CTE, and 'cte referenced with fromTable is schema qualified' is the same query through fromTable, where the reference gets schema-qualified into something that does not resolve. The CTE body is an inner statement, so the statement's only `;` is the outer one.",
       "dialects": [
         "mssql"
       ],
@@ -10253,7 +10201,7 @@
     },
     {
       "name": "union of two selects each with a bound value",
-      "note": "Set-operation branches bind AFTER the outer query's own WHERE values (the union clause is walked after WHERE/GROUP BY/HAVING), so the params come out 'active' then 'pending' — outer first — and MSSQL numbers them `@p0`/`@p1` in that same order. Each branch is rendered as an inner statement, so no branch carries a trailing semicolon and the statement has exactly one, at the end. (Before 7.0.0 the inner-statement flag also kept the MSSQL TOP and the MySQL/Postgres/SQLite LIMIT safety nets out of each branch. There are no safety nets now, so the semicolon and the bind order are the whole test.)",
+      "note": "Set-operation branches bind AFTER the outer query's own WHERE values (the union clause is walked after WHERE/GROUP BY/HAVING), so the params come out 'active' then 'pending' \u2014 outer first \u2014 and MSSQL numbers them `@p0`/`@p1` in that same order. Each branch is rendered as an inner statement, so no branch carries a trailing semicolon and the statement has exactly one, at the end. (Before 7.0.0 the inner-statement flag also kept the MSSQL TOP and the MySQL/Postgres/SQLite LIMIT safety nets out of each branch. There are no safety nets now, so the semicolon and the bind order are the whole test.)",
       "ops": [
         {
           "op": "selectColumn",
@@ -10361,7 +10309,7 @@
     },
     {
       "name": "union all intersect and except chained in one query",
-      "note": "Set operations share one ordered list and are emitted in the order they were added, single-space separated, with no parentheses around any branch. Values bind branch by branch, left to right. INTERSECT and EXCEPT are emitted for MySQL too, which only learned them in 8.0.31 — the builder does not gate on that.",
+      "note": "Set operations share one ordered list and are emitted in the order they were added, single-space separated, with no parentheses around any branch. Values bind branch by branch, left to right. INTERSECT and EXCEPT are emitted for MySQL too, which only learned them in 8.0.31 \u2014 the builder does not gate on that.",
       "ops": [
         {
           "op": "selectColumn",
@@ -10639,7 +10587,7 @@
     },
     {
       "name": "union branch with an empty in list is refused",
-      "note": "Validation runs inside set-operation branches too — the branch is parsed as a full statement, so its errors surface from the outer parse.",
+      "note": "Validation runs inside set-operation branches too \u2014 the branch is parsed as a full statement, so its errors surface from the outer parse.",
       "ops": [
         {
           "op": "selectColumn",
@@ -10700,7 +10648,7 @@
     },
     {
       "name": "multi builder batch of insert update and select",
-      "note": "The whole point of a batch: placeholder numbering RESTARTS at each statement, because each is prepared independently (Postgres emits $1,$2 then $1,$2 then $1 — not $1..$5; MSSQL emits a fresh `SET NOCOUNT ON; exec sp_executesql` with @p0 per statement). Statements are concatenated with no separator beyond each one's own trailing `;`. Note also the raw rendering ends with `COMMIT; ` — a trailing space the prepared rendering does not have.",
+      "note": "The whole point of a batch: placeholder numbering RESTARTS at each statement, because each is prepared independently (Postgres emits $1,$2 then $1,$2 then $1 \u2014 not $1..$5; MSSQL emits a fresh `SET NOCOUNT ON; exec sp_executesql` with @p0 per statement). Statements are concatenated with no separator beyond each one's own trailing `;`. Note also the raw rendering ends with `COMMIT; ` \u2014 a trailing space the prepared rendering does not have.",
       "builders": [
         {
           "name": "insert_user",
@@ -10789,34 +10737,34 @@
             "sql": "BEGIN TRANSACTION; SET NOCOUNT ON; exec sp_executesql N'INSERT INTO [dbo].[users] ([name], [email]) VALUES (@p0, @p1);', N'@p0 nvarchar(max), @p1 nvarchar(max)', @p0 = N'John', @p1 = N'john@example.com';SET NOCOUNT ON; exec sp_executesql N'UPDATE [s] SET [user_count] = @p0 FROM [dbo].[stats] AS [s] WHERE [s].[id] = @p1;', N'@p0 tinyint, @p1 tinyint', @p0 = 100, @p1 = 1;SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[email] = @p0;', N'@p0 nvarchar(max)', @p0 = N'john@example.com';COMMIT TRANSACTION;",
             "params": []
           },
-          "raw": "BEGIN TRANSACTION; INSERT INTO [dbo].[users] ([name], [email]) VALUES (John, john@example.com);UPDATE [s] SET [user_count] = 100 FROM [dbo].[stats] AS [s] WHERE [s].[id] = 1;SELECT * FROM [dbo].[users] AS [u] WHERE [u].[email] = john@example.com;COMMIT TRANSACTION; "
+          "raw": "BEGIN TRANSACTION; INSERT INTO [dbo].[users] ([name], [email]) VALUES (John, john@example.com);UPDATE [s] SET [user_count] = 100 FROM [dbo].[stats] AS [s] WHERE [s].[id] = 1;SELECT * FROM [dbo].[users] AS [u] WHERE [u].[email] = john@example.com;COMMIT TRANSACTION;"
         },
         "mysql": {
           "prepared": {
             "sql": "START TRANSACTION; INSERT INTO `users` (`name`, `email`) VALUES (?, ?);UPDATE `stats` AS `s` SET `user_count` = ? WHERE `s`.`id` = ?;SELECT * FROM `users` AS `u` WHERE `u`.`email` = ?;COMMIT;",
             "params": []
           },
-          "raw": "START TRANSACTION; INSERT INTO `users` (`name`, `email`) VALUES (John, john@example.com);UPDATE `stats` AS `s` SET `user_count` = 100 WHERE `s`.`id` = 1;SELECT * FROM `users` AS `u` WHERE `u`.`email` = john@example.com;COMMIT; "
+          "raw": "START TRANSACTION; INSERT INTO `users` (`name`, `email`) VALUES (John, john@example.com);UPDATE `stats` AS `s` SET `user_count` = 100 WHERE `s`.`id` = 1;SELECT * FROM `users` AS `u` WHERE `u`.`email` = john@example.com;COMMIT;"
         },
         "postgres": {
           "prepared": {
             "sql": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"email\") VALUES ($1, $2);UPDATE \"public\".\"stats\" AS \"s\" SET \"user_count\" = $1 WHERE \"s\".\"id\" = $2;SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"email\" = $1;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"email\") VALUES (John, john@example.com);UPDATE \"public\".\"stats\" AS \"s\" SET \"user_count\" = 100 WHERE \"s\".\"id\" = 1;SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"email\" = john@example.com;COMMIT; "
+          "raw": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"email\") VALUES (John, john@example.com);UPDATE \"public\".\"stats\" AS \"s\" SET \"user_count\" = 100 WHERE \"s\".\"id\" = 1;SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"email\" = john@example.com;COMMIT;"
         },
         "sqlite": {
           "prepared": {
             "sql": "BEGIN; INSERT INTO \"users\" (\"name\", \"email\") VALUES (?, ?);UPDATE \"stats\" AS \"s\" SET \"user_count\" = ? WHERE \"s\".\"id\" = ?;SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"email\" = ?;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; INSERT INTO \"users\" (\"name\", \"email\") VALUES (John, john@example.com);UPDATE \"stats\" AS \"s\" SET \"user_count\" = 100 WHERE \"s\".\"id\" = 1;SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"email\" = john@example.com;COMMIT; "
+          "raw": "BEGIN; INSERT INTO \"users\" (\"name\", \"email\") VALUES (John, john@example.com);UPDATE \"stats\" AS \"s\" SET \"user_count\" = 100 WHERE \"s\".\"id\" = 1;SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"email\" = john@example.com;COMMIT;"
         }
       }
     },
     {
       "name": "multi builder batch with transaction off",
-      "note": "With the transaction off, the batch is the bare concatenation of statements — no BEGIN/COMMIT and, importantly, no leading space either. With it on, the four dialects disagree on the delimiters: BEGIN TRANSACTION/COMMIT TRANSACTION (MSSQL), START TRANSACTION/COMMIT (MySQL), BEGIN/COMMIT (Postgres and SQLite).",
+      "note": "With the transaction off, the batch is the bare concatenation of statements \u2014 no BEGIN/COMMIT and, importantly, no leading space either. With it on, the four dialects disagree on the delimiters: BEGIN TRANSACTION/COMMIT TRANSACTION (MSSQL), START TRANSACTION/COMMIT (MySQL), BEGIN/COMMIT (Postgres and SQLite).",
       "transaction": "off",
       "builders": [
         {
@@ -10902,7 +10850,7 @@
     },
     {
       "name": "multi builder batch whose statements carry a cte and a union",
-      "note": "Composition check: a batch statement is a full query, so CTE-first value ordering and set-operation branches behave inside a batch exactly as they do standalone — and the per-statement placeholder counter restarts across them regardless of nesting depth.",
+      "note": "Composition check: a batch statement is a full query, so CTE-first value ordering and set-operation branches behave inside a batch exactly as they do standalone \u2014 and the per-statement placeholder counter restarts across them regardless of nesting depth.",
       "builders": [
         {
           "name": "cte_query",
@@ -11009,34 +10957,34 @@
             "sql": "BEGIN TRANSACTION; SET NOCOUNT ON; exec sp_executesql N'WITH [active_users] AS (SELECT [u].[id] FROM [dbo].[users] AS [u] WHERE [u].[status] = @p0) SELECT * FROM active_users AS au WHERE [au].[id] > @p1;', N'@p0 nvarchar(max), @p1 tinyint', @p0 = N'active', @p1 = 0;SET NOCOUNT ON; exec sp_executesql N'SELECT [u].[email] FROM [dbo].[users] AS [u] WHERE [u].[type] = @p0 UNION SELECT [s].[email] FROM [dbo].[subscribers] AS [s] WHERE [s].[confirmed] = @p1;', N'@p0 nvarchar(max), @p1 bit', @p0 = N'customer', @p1 = 1;COMMIT TRANSACTION;",
             "params": []
           },
-          "raw": "BEGIN TRANSACTION; WITH [active_users] AS (SELECT [u].[id] FROM [dbo].[users] AS [u] WHERE [u].[status] = active) SELECT * FROM active_users AS au WHERE [au].[id] > 0;SELECT [u].[email] FROM [dbo].[users] AS [u] WHERE [u].[type] = customer UNION SELECT [s].[email] FROM [dbo].[subscribers] AS [s] WHERE [s].[confirmed] = true;COMMIT TRANSACTION; "
+          "raw": "BEGIN TRANSACTION; WITH [active_users] AS (SELECT [u].[id] FROM [dbo].[users] AS [u] WHERE [u].[status] = active) SELECT * FROM active_users AS au WHERE [au].[id] > 0;SELECT [u].[email] FROM [dbo].[users] AS [u] WHERE [u].[type] = customer UNION SELECT [s].[email] FROM [dbo].[subscribers] AS [s] WHERE [s].[confirmed] = true;COMMIT TRANSACTION;"
         },
         "mysql": {
           "prepared": {
             "sql": "START TRANSACTION; WITH `active_users` AS (SELECT `u`.`id` FROM `users` AS `u` WHERE `u`.`status` = ?) SELECT * FROM active_users AS au WHERE `au`.`id` > ?;SELECT `u`.`email` FROM `users` AS `u` WHERE `u`.`type` = ? UNION SELECT `s`.`email` FROM `subscribers` AS `s` WHERE `s`.`confirmed` = ?;COMMIT;",
             "params": []
           },
-          "raw": "START TRANSACTION; WITH `active_users` AS (SELECT `u`.`id` FROM `users` AS `u` WHERE `u`.`status` = active) SELECT * FROM active_users AS au WHERE `au`.`id` > 0;SELECT `u`.`email` FROM `users` AS `u` WHERE `u`.`type` = customer UNION SELECT `s`.`email` FROM `subscribers` AS `s` WHERE `s`.`confirmed` = true;COMMIT; "
+          "raw": "START TRANSACTION; WITH `active_users` AS (SELECT `u`.`id` FROM `users` AS `u` WHERE `u`.`status` = active) SELECT * FROM active_users AS au WHERE `au`.`id` > 0;SELECT `u`.`email` FROM `users` AS `u` WHERE `u`.`type` = customer UNION SELECT `s`.`email` FROM `subscribers` AS `s` WHERE `s`.`confirmed` = true;COMMIT;"
         },
         "postgres": {
           "prepared": {
             "sql": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"status\" = $1) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > $2;SELECT \"u\".\"email\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"type\" = $1 UNION SELECT \"s\".\"email\" FROM \"public\".\"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = $2;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"status\" = active) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > 0;SELECT \"u\".\"email\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"type\" = customer UNION SELECT \"s\".\"email\" FROM \"public\".\"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = true;COMMIT; "
+          "raw": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"status\" = active) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > 0;SELECT \"u\".\"email\" FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"type\" = customer UNION SELECT \"s\".\"email\" FROM \"public\".\"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = true;COMMIT;"
         },
         "sqlite": {
           "prepared": {
             "sql": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"users\" AS \"u\" WHERE \"u\".\"status\" = ?) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > ?;SELECT \"u\".\"email\" FROM \"users\" AS \"u\" WHERE \"u\".\"type\" = ? UNION SELECT \"s\".\"email\" FROM \"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = ?;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"users\" AS \"u\" WHERE \"u\".\"status\" = active) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > 0;SELECT \"u\".\"email\" FROM \"users\" AS \"u\" WHERE \"u\".\"type\" = customer UNION SELECT \"s\".\"email\" FROM \"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = true;COMMIT; "
+          "raw": "BEGIN; WITH \"active_users\" AS (SELECT \"u\".\"id\" FROM \"users\" AS \"u\" WHERE \"u\".\"status\" = active) SELECT * FROM active_users AS au WHERE \"au\".\"id\" > 0;SELECT \"u\".\"email\" FROM \"users\" AS \"u\" WHERE \"u\".\"type\" = customer UNION SELECT \"s\".\"email\" FROM \"subscribers\" AS \"s\" WHERE \"s\".\"confirmed\" = true;COMMIT;"
         }
       }
     },
     {
       "name": "multi builder batch with an invalid statement is refused",
-      "note": "One bad statement fails the whole batch — there is no partial rendering and no skipping. The UPDATE here has a table but no SET column.",
+      "note": "One bad statement fails the whole batch \u2014 there is no partial rendering and no skipping. The UPDATE here has a table but no SET column.",
       "builders": [
         {
           "name": "ok",
@@ -11074,16 +11022,16 @@
       ],
       "expect": {
         "mssql": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "mysql": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "postgres": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         },
         "sqlite": {
-          "throws": "General: UPDATE requires at least one SET column"
+          "throws": "Update: UPDATE requires at least one SET column"
         }
       }
     },
@@ -11138,18 +11086,15 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[a] = @p0 AND [u].[b] = @p1 AND [u].[c] = @p2;', N'@p0 nvarchar(max), @p1 nvarchar(max), @p2 tinyint', @p0 = NULL, @p1 = N'after', @p2 = 7;",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[a] IS NULL AND [u].[b] = @p0 AND [u].[c] = @p1;', N'@p0 nvarchar(max), @p1 tinyint', @p0 = N'after', @p1 = 7;",
             "params": []
           },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[a] =  AND [u].[b] = after AND [u].[c] = 7;"
+          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[a] IS NULL AND [u].[b] = after AND [u].[c] = 7;"
         },
         "mysql": {
           "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`a` = ? AND `u`.`b` = ? AND `u`.`c` = ?;",
+            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`a` IS NULL AND `u`.`b` = ? AND `u`.`c` = ?;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
@@ -11160,15 +11105,12 @@
               }
             ]
           },
-          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`a` =  AND `u`.`b` = after AND `u`.`c` = 7;"
+          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`a` IS NULL AND `u`.`b` = after AND `u`.`c` = 7;"
         },
         "postgres": {
           "prepared": {
-            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"a\" = $1 AND \"u\".\"b\" = $2 AND \"u\".\"c\" = $3;",
+            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"a\" IS NULL AND \"u\".\"b\" = $1 AND \"u\".\"c\" = $2;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
@@ -11179,15 +11121,12 @@
               }
             ]
           },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"a\" =  AND \"u\".\"b\" = after AND \"u\".\"c\" = 7;"
+          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"a\" IS NULL AND \"u\".\"b\" = after AND \"u\".\"c\" = 7;"
         },
         "sqlite": {
           "prepared": {
-            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"a\" = ? AND \"u\".\"b\" = ? AND \"u\".\"c\" = ?;",
+            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"a\" IS NULL AND \"u\".\"b\" = ? AND \"u\".\"c\" = ?;",
             "params": [
-              {
-                "t": "null"
-              },
               {
                 "t": "string",
                 "v": "after"
@@ -11198,7 +11137,7 @@
               }
             ]
           },
-          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"a\" =  AND \"u\".\"b\" = after AND \"u\".\"c\" = 7;"
+          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"a\" IS NULL AND \"u\".\"b\" = after AND \"u\".\"c\" = 7;"
         }
       }
     },
@@ -11304,7 +11243,7 @@
     },
     {
       "name": "boolean true and false",
-      "note": "MSSQL declares `bit` and inlines 1/0; the other three bind the boolean itself. parseRaw inlines the words true/false in EVERY dialect, MSSQL included — the split between MSSQL's prepared (1/0) and raw (true/false) rendering is deliberate, do not unify it.",
+      "note": "MSSQL declares `bit` and inlines 1/0; the other three bind the boolean itself. parseRaw inlines the words true/false in EVERY dialect, MSSQL included \u2014 the split between MSSQL's prepared (1/0) and raw (true/false) rendering is deliberate, do not unify it.",
       "ops": [
         {
           "op": "selectAll"
@@ -11398,7 +11337,7 @@
     },
     {
       "name": "zero empty string and false are values not absences",
-      "note": "The three falsy traps in one query. A truthiness check anywhere on the value path (`if (value)`, `if (value.isNotEmpty)`, `value ?? fallback`) drops 0, '' or false, and each drop shifts every later parameter. The empty string is ALSO the TypeScript API's sentinel for 'no alias' — that sentinel meaning applies to identifier slots only, NEVER to a bound value, so `= ''` must still emit a placeholder and bind an empty string.",
+      "note": "The three falsy traps in one query. A truthiness check anywhere on the value path (`if (value)`, `if (value.isNotEmpty)`, `value ?? fallback`) drops 0, '' or false, and each drop shifts every later parameter. The empty string is ALSO the TypeScript API's sentinel for 'no alias' \u2014 that sentinel meaning applies to identifier slots only, NEVER to a bound value, so `= ''` must still emit a placeholder and bind an empty string.",
       "ops": [
         {
           "op": "selectAll"
@@ -11611,7 +11550,7 @@
     },
     {
       "name": "string value containing a backslash newline and tab",
-      "note": "A backslash is NOT an escape character on this path — the value is bound, so it must reach the driver byte-for-byte. MySQL's own literal syntax does treat \\ as an escape, which tempts a port into pre-escaping it; do not. The newline and tab must survive as raw 0x0A/0x09, not as the two-character sequences \\n and \\t.",
+      "note": "A backslash is NOT an escape character on this path \u2014 the value is bound, so it must reach the driver byte-for-byte. MySQL's own literal syntax does treat \\ as an escape, which tempts a port into pre-escaping it; do not. The newline and tab must survive as raw 0x0A/0x09, not as the two-character sequences \\n and \\t.",
       "ops": [
         {
           "op": "selectAll"
@@ -11680,7 +11619,7 @@
     },
     {
       "name": "string value containing unicode and emoji",
-      "note": "Pins that nothing on the value path measures, slices or re-encodes a string. Dart and JS both hold strings as UTF-16, so the emoji (a surrogate pair) and the ZWJ family sequence occupy the same code units in both — a port that converts to runes/code points, or truncates by length, diverges here.",
+      "note": "Pins that nothing on the value path measures, slices or re-encodes a string. Dart and JS both hold strings as UTF-16, so the emoji (a surrogate pair) and the ZWJ family sequence occupy the same code units in both \u2014 a port that converts to runes/code points, or truncates by length, diverges here.",
       "ops": [
         {
           "op": "selectAll"
@@ -11697,17 +11636,17 @@
           "operator": "Equals",
           "value": {
             "t": "string",
-            "v": "héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω"
+            "v": "h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9"
           }
         }
       ],
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[bio] = @p0;', N'@p0 nvarchar(max)', @p0 = N'héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω';",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[bio] = @p0;', N'@p0 nvarchar(max)', @p0 = N'h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9';",
             "params": []
           },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[bio] = héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω;"
+          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[bio] = h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9;"
         },
         "mysql": {
           "prepared": {
@@ -11715,11 +11654,11 @@
             "params": [
               {
                 "t": "string",
-                "v": "héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω"
+                "v": "h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9"
               }
             ]
           },
-          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`bio` = héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω;"
+          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`bio` = h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9;"
         },
         "postgres": {
           "prepared": {
@@ -11727,11 +11666,11 @@
             "params": [
               {
                 "t": "string",
-                "v": "héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω"
+                "v": "h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9"
               }
             ]
           },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"bio\" = héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω;"
+          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"bio\" = h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9;"
         },
         "sqlite": {
           "prepared": {
@@ -11739,17 +11678,17 @@
             "params": [
               {
                 "t": "string",
-                "v": "héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω"
+                "v": "h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9"
               }
             ]
           },
-          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"bio\" = héllo wörld 👋 👨‍👩‍👧‍👦 日本語 Ω;"
+          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"bio\" = h\u00e9llo w\u00f6rld \ud83d\udc4b \ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66 \u65e5\u672c\u8a9e \u03a9;"
         }
       }
     },
     {
       "name": "sql injection payload is bound never interpolated",
-      "note": "The canary. The payload must appear ONLY as a bound parameter — or, for MSSQL, quote-doubled inside the sp_executesql value list — never as executable text in the statement body. If a port ever concatenates a value into the SQL, this case is what catches it.",
+      "note": "The canary. The payload must appear ONLY as a bound parameter \u2014 or, for MSSQL, quote-doubled inside the sp_executesql value list \u2014 never as executable text in the statement body. If a port ever concatenates a value into the SQL, this case is what catches it.",
       "ops": [
         {
           "op": "selectAll"
@@ -11818,7 +11757,7 @@
     },
     {
       "name": "like wildcards live in the bound value not in the sql",
-      "note": "The % and _ belong to the value, not the operator — the builder never adds or strips them. A port that helpfully wraps the value in %...% itself would double them here.",
+      "note": "The % and _ belong to the value, not the operator \u2014 the builder never adds or strips them. A port that helpfully wraps the value in %...% itself would double them here.",
       "ops": [
         {
           "op": "selectAll"
@@ -11912,7 +11851,7 @@
     },
     {
       "name": "a value that looks like a placeholder is bound not renumbered",
-      "note": "The mirror image of the raw-fragment placeholder tests: here the ?/$1/@p0 text arrives as a VALUE. Values never pass through the placeholder-substitution scan, so they must survive untouched and must not perturb Postgres's numbering — $2 still binds the second value, not the string '$1'.",
+      "note": "The mirror image of the raw-fragment placeholder tests: here the ?/$1/@p0 text arrives as a VALUE. Values never pass through the placeholder-substitution scan, so they must survive untouched and must not perturb Postgres's numbering \u2014 $2 still binds the second value, not the string '$1'.",
       "ops": [
         {
           "op": "selectAll"
@@ -12150,7 +12089,7 @@
     },
     {
       "name": "negative integers are smallint never tinyint",
-      "note": "T-SQL `tinyint` is UNSIGNED 0-255. Declaring a negative as tinyint makes SQL Server raise an arithmetic-overflow error on every row. The band test must be `value >= 0 && value <= 255`, NOT the signed -128..127 byte range a port is likely to reach for from habit — that exact mistake is the bug this guards against.",
+      "note": "T-SQL `tinyint` is UNSIGNED 0-255. Declaring a negative as tinyint makes SQL Server raise an arithmetic-overflow error on every row. The band test must be `value >= 0 && value <= 255`, NOT the signed -128..127 byte range a port is likely to reach for from habit \u2014 that exact mistake is the bug this guards against.",
       "ops": [
         {
           "op": "selectAll"
@@ -12557,7 +12496,7 @@
     },
     {
       "name": "integers beyond 2 to the 53 are float not bigint",
-      "note": "Past 2^53 an integer is not exactly representable as a double, so MSSQL declares it `float`, NOT `bigint`. The reason is textual: 1e21 renders via toString() as `1e+21`, which is not a legal bigint literal and made SQL Server reject the whole batch — float's literal syntax does accept scientific notation. Dart's int is a true 64-bit integer on the VM, so 9007199254740992 is an exact int there and a port will be tempted to call it bigint. It must apply the same is-safe-integer test JS does, AND reproduce JS's toString() output exactly (note `1e+21`, not 1000000000000000000000).",
+      "note": "Past 2^53 an integer is not exactly representable as a double, so MSSQL declares it `float`, NOT `bigint`. The reason is textual: 1e21 renders via toString() as `1e+21`, which is not a legal bigint literal and made SQL Server reject the whole batch \u2014 float's literal syntax does accept scientific notation. Dart's int is a true 64-bit integer on the VM, so 9007199254740992 is an exact int there and a port will be tempted to call it bigint. It must apply the same is-safe-integer test JS does, AND reproduce JS's toString() output exactly (note `1e+21`, not 1000000000000000000000).",
       "ops": [
         {
           "op": "selectAll"
@@ -12651,7 +12590,7 @@
     },
     {
       "name": "mixed value types pin parameter order across clauses",
-      "note": "Parameters bind in EMISSION order — CTE, JOIN, WHERE, HAVING — which is not the order the builder methods were called. LIMIT and OFFSET are inlined into the SQL text and bind nothing; a port that binds them appends two phantom parameters. The IN list also carries a null and a double, so a filtering or coercing IN path shows up here too.",
+      "note": "Parameters bind in EMISSION order \u2014 CTE, JOIN, WHERE, HAVING \u2014 which is not the order the builder methods were called. LIMIT and OFFSET are inlined into the SQL text and bind nothing; a port that binds them appends two phantom parameters. The IN list also carries a null and a double, so a filtering or coercing IN path shows up here too.",
       "ops": [
         {
           "op": "cte",
@@ -13065,7 +13004,7 @@
     },
     {
       "name": "column name containing the mssql closing bracket is escaped",
-      "note": "Identifier names are user-controlled (they come from a dataset's schema), so they are an injection surface. MSSQL must double the `]` so the name cannot close the quoting and inject `OR [1=1`. The other three have nothing to escape here and pass the brackets through as ordinary characters — that asymmetry is the point: each dialect doubles ONLY its own closing delimiter.",
+      "note": "Identifier names are user-controlled (they come from a dataset's schema), so they are an injection surface. MSSQL must double the `]` so the name cannot close the quoting and inject `OR [1=1`. The other three have nothing to escape here and pass the brackets through as ordinary characters \u2014 that asymmetry is the point: each dialect doubles ONLY its own closing delimiter.",
       "ops": [
         {
           "op": "selectColumn",
@@ -13111,7 +13050,7 @@
     },
     {
       "name": "table name and alias containing a double quote are escaped",
-      "note": "The Postgres/SQLite breakout: an unescaped double quote terminates the identifier and turns the rest into SQL. Postgres and SQLite double it; MSSQL and MySQL emit it verbatim inside their own delimiters. The ALIAS is hostile too — aliases go through the same quoting path as names, and a port that quotes names but forgets aliases still passes the table half of this case while leaking through the alias.",
+      "note": "The Postgres/SQLite breakout: an unescaped double quote terminates the identifier and turns the rest into SQL. Postgres and SQLite double it; MSSQL and MySQL emit it verbatim inside their own delimiters. The ALIAS is hostile too \u2014 aliases go through the same quoting path as names, and a port that quotes names but forgets aliases still passes the table half of this case while leaking through the alias.",
       "ops": [
         {
           "op": "selectAll"
@@ -13202,7 +13141,7 @@
     },
     {
       "name": "nul byte in an identifier is refused",
-      "note": "Some drivers truncate a C string at the first NUL, so `bad\u0000name` could reach the server as `bad` — silently addressing a different column. Refuse it at build time instead. Must throw in every dialect, before any SQL is produced.",
+      "note": "Some drivers truncate a C string at the first NUL, so `bad\u0000name` could reach the server as `bad` \u2014 silently addressing a different column. Refuse it at build time instead. Must throw in every dialect, before any SQL is produced.",
       "ops": [
         {
           "op": "selectColumn",
@@ -13232,7 +13171,7 @@
     },
     {
       "name": "nul byte in a raw fragment is refused",
-      "note": "Load-bearing for the entire placeholder scheme. The internal placeholder token is NUL-delimited, so a raw fragment carrying NUL could FORGE a token and steal a bound value's slot. Rejecting NUL in every caller-supplied fragment is precisely what makes the token unforgeable from caller text — a port that skips this check has a parameter-smuggling hole, not merely a cosmetic gap.",
+      "note": "Load-bearing for the entire placeholder scheme. The internal placeholder token is NUL-delimited, so a raw fragment carrying NUL could FORGE a token and steal a bound value's slot. Rejecting NUL in every caller-supplied fragment is precisely what makes the token unforgeable from caller text \u2014 a port that skips this check has a parameter-smuggling hole, not merely a cosmetic gap.",
       "ops": [
         {
           "op": "selectRaw",
@@ -13326,7 +13265,7 @@
     },
     {
       "name": "empty not in is refused",
-      "note": "`NOT IN ()` is a syntax error in every dialect, and an empty NOT IN almost always means the caller's filter logic produced nothing. It must throw with its OWN message (not the IN one) and must never be silently dropped — dropping it would WIDEN the result set instead of narrowing it, which is the dangerous direction to fail.",
+      "note": "`NOT IN ()` is a syntax error in every dialect, and an empty NOT IN almost always means the caller's filter logic produced nothing. It must throw with its OWN message (not the IN one) and must never be silently dropped \u2014 dropping it would WIDEN the result set instead of narrowing it, which is the dangerous direction to fail.",
       "ops": [
         {
           "op": "selectAll"
@@ -13360,7 +13299,7 @@
     },
     {
       "name": "raw fragments are emitted verbatim and are a trust boundary",
-      "note": "Nothing in a raw fragment is escaped, quoted or parameterized: the semicolon, the -- comment and the block comment all survive intact (note that the resulting statement is nonsense — that is the demonstration, not a bug). This is the contract: raw is for SQL the CALLER controls, and it is the one place caller text becomes executable SQL, so never build one from user input. A port must not 'helpfully' sanitize these, or every legitimate raw fragment breaks.",
+      "note": "Nothing in a raw fragment is escaped, quoted or parameterized: the semicolon, the -- comment and the block comment all survive intact (note that the resulting statement is nonsense \u2014 that is the demonstration, not a bug). This is the contract: raw is for SQL the CALLER controls, and it is the one place caller text becomes executable SQL, so never build one from user input. A port must not 'helpfully' sanitize these, or every legitimate raw fragment breaks.",
       "ops": [
         {
           "op": "selectRaw",
@@ -13691,7 +13630,7 @@
     },
     {
       "name": "a union branch that carries its own cte emits WITH inside the UNION",
-      "note": "defaultUnion renders each branch with the full defaultToSql, and that walk emits the branch's cteStates FIRST — so a CTE declared inside a union branch produces `... UNION ALL WITH \"t\" AS (...) SELECT ...`, which no engine accepts. Frozen contract: reproduce it, do not hoist the CTE to the head of the statement. Also pins the value order across the boundary: the OUTER where value binds before the branch's CTE value, which binds before the branch's own where value.",
+      "note": "defaultUnion renders each branch with the full defaultToSql, and that walk emits the branch's cteStates FIRST \u2014 so a CTE declared inside a union branch produces `... UNION ALL WITH \"t\" AS (...) SELECT ...`, which no engine accepts. Frozen contract: reproduce it, do not hoist the CTE to the head of the statement. Also pins the value order across the boundary: the OUTER where value binds before the branch's CTE value, which binds before the branch's own where value.",
       "ops": [
         {
           "op": "selectAll"
@@ -13832,7 +13771,7 @@
     },
     {
       "name": "an explicit top inside a derived table is silently dropped",
-      "note": "MSSQL's TOP is injected by the `beforeSelectColumns` hook in ToSqlOptions, and defaultFrom/defaultJoin/defaultSelect/defaultWhere all call `defaultToSql(sub, config, mode)` WITHOUT passing options. So `.top(5)` inside a fromWithBuilder produces NO TOP at all — the row cap the caller explicitly asked for vanishes. Compare with the next case, where the union parser DOES thread options through and the same op does render. Since 7.0.0 the MSSQL golden contains no TOP whatsoever and is byte-identical to 'from derived table', which is this op-list minus the top: the pin is now the strong one, that `.top(5)` here changes nothing at all. (Before 7.0.0 the outer SELECT still collected the automatic `TOP (1000)`, so the pin was the weaker 'exactly one TOP, and it is not the one the caller wrote'.) A Dart port that threads its options object uniformly through every subquery emits `TOP (5)` in the derived table and fails.",
+      "note": "MSSQL's TOP is injected by the `beforeSelectColumns` hook in ToSqlOptions, and defaultFrom/defaultJoin/defaultSelect/defaultWhere all call `defaultToSql(sub, config, mode)` WITHOUT passing options. So `.top(5)` inside a fromWithBuilder produces NO TOP at all \u2014 the row cap the caller explicitly asked for vanishes. Compare with the next case, where the union parser DOES thread options through and the same op does render. Since 7.0.0 the MSSQL golden contains no TOP whatsoever and is byte-identical to 'from derived table', which is this op-list minus the top: the pin is now the strong one, that `.top(5)` here changes nothing at all. (Before 7.0.0 the outer SELECT still collected the automatic `TOP (1000)`, so the pin was the weaker 'exactly one TOP, and it is not the one the caller wrote'.) A Dart port that threads its options object uniformly through every subquery emits `TOP (5)` in the derived table and fails.",
       "ops": [
         {
           "op": "selectAll"
@@ -13859,10 +13798,10 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM (SELECT * FROM [dbo].[users] AS [u]) AS [sub];', N'';",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM (SELECT TOP (5) * FROM [dbo].[users] AS [u]) AS [sub];', N'';",
             "params": []
           },
-          "raw": "SELECT * FROM (SELECT * FROM [dbo].[users] AS [u]) AS [sub];"
+          "raw": "SELECT * FROM (SELECT TOP (5) * FROM [dbo].[users] AS [u]) AS [sub];"
         },
         "mysql": {
           "prepared": {
@@ -13889,7 +13828,7 @@
     },
     {
       "name": "an explicit top inside a union branch is emitted",
-      "note": "The mirror image of the previous case. defaultUnion is the ONLY sub-parser that forwards `options` into defaultToSql, so `.top(5)` inside a union branch DOES render `SELECT TOP (5)` on MSSQL — even though the branch is an inner statement, because the hook never tests `isInnerStatement`. The MSSQL golden has exactly one TOP and it is the branch's explicit one; since 7.0.0 removed the automatic cap that is the only kind of TOP there is, and the outer query's WHERE has nothing to do with it. Together with the previous case this pins an inconsistency a port will almost certainly normalize away in one direction or the other.",
+      "note": "The mirror image of the previous case. defaultUnion is the ONLY sub-parser that forwards `options` into defaultToSql, so `.top(5)` inside a union branch DOES render `SELECT TOP (5)` on MSSQL \u2014 even though the branch is an inner statement, because the hook never tests `isInnerStatement`. The MSSQL golden has exactly one TOP and it is the branch's explicit one; since 7.0.0 removed the automatic cap that is the only kind of TOP there is, and the outer query's WHERE has nothing to do with it. Together with the previous case this pins an inconsistency a port will almost certainly normalize away in one direction or the other.",
       "ops": [
         {
           "op": "selectAll"
@@ -13975,7 +13914,7 @@
     },
     {
       "name": "mssql top combined with joins and an order by",
-      "note": "TOP is emitted by the select hook, so it lands before the column list and BEFORE the JOIN clauses — `SELECT TOP (10) * FROM [dbo].[users] AS [u] INNER JOIN ...`. Note also that `.top(n)` and an ORDER BY coexist without complaint: top is not pagination, and with no limit and no offset set, to-sql never calls defaultLimitOffset at all, so neither the TOP/LIMIT conflict nor the ORDER BY guards are reached. The three other dialects ignore top entirely and put no LIMIT in its place — their goldens are the plain joined SELECT. (Before 7.0.0 this was the contract in the opposite direction: the explicit top suppressed MSSQL's automatic cap, and the note called it out that an unbounded MySQL/Postgres/SQLite SELECT was genuinely unbounded while the MSSQL one was capped. That asymmetry is gone; all four are unbounded unless the caller says otherwise.)",
+      "note": "TOP is emitted by the select hook, so it lands before the column list and BEFORE the JOIN clauses \u2014 `SELECT TOP (10) * FROM [dbo].[users] AS [u] INNER JOIN ...`. Note also that `.top(n)` and an ORDER BY coexist without complaint: top is not pagination, and with no limit and no offset set, to-sql never calls defaultLimitOffset at all, so neither the TOP/LIMIT conflict nor the ORDER BY guards are reached. The three other dialects ignore top entirely and put no LIMIT in its place \u2014 their goldens are the plain joined SELECT. (Before 7.0.0 this was the contract in the opposite direction: the explicit top suppressed MSSQL's automatic cap, and the note called it out that an unbounded MySQL/Postgres/SQLite SELECT was genuinely unbounded while the MSSQL one was capped. That asymmetry is gone; all four are unbounded unless the caller says otherwise.)",
       "ops": [
         {
           "op": "selectAll"
@@ -14141,7 +14080,7 @@
     },
     {
       "name": "offset without a limit on an unfiltered query emits no cap",
-      "note": "The case that moved most in 7.0.0. In 6.x this was the ONLY route to the MySQL/Postgres/SQLite automatic LIMIT: defaultLimitOffset ran (offset > 0), saw limit === 0, no inner statement and no WHERE, and emitted `LIMIT 1000 OFFSET 5`; MSSQL reached the same cap down its own branch and spelled it `FETCH NEXT 1000 ROWS ONLY`, with no TOP, since TOP and OFFSET cannot share a SELECT (Msg 10741). A caller paging an unfiltered table got 1000 rows and no sign the rest existed. 7.0.0 removed the cap: Postgres now emits a bare `  OFFSET 5` and returns every row past the fifth, MySQL and SQLite emit only their sentinel limits — which bound nothing — and MSSQL emits `OFFSET 5 ROWS` with no FETCH. The golden is byte-identical to 'offset with a where and no limit: only postgres keeps the doubled space' apart from the WHERE, because the WHERE no longer touches the tail; a port whose two goldens differ has kept a cap somewhere.",
+      "note": "The case that moved most in 7.0.0. In 6.x this was the ONLY route to the MySQL/Postgres/SQLite automatic LIMIT: defaultLimitOffset ran (offset > 0), saw limit === 0, no inner statement and no WHERE, and emitted `LIMIT 1000 OFFSET 5`; MSSQL reached the same cap down its own branch and spelled it `FETCH NEXT 1000 ROWS ONLY`, with no TOP, since TOP and OFFSET cannot share a SELECT (Msg 10741). A caller paging an unfiltered table got 1000 rows and no sign the rest existed. 7.0.0 removed the cap: Postgres now emits a bare `  OFFSET 5` and returns every row past the fifth, MySQL and SQLite emit only their sentinel limits \u2014 which bound nothing \u2014 and MSSQL emits `OFFSET 5 ROWS` with no FETCH. The golden is byte-identical to 'offset with a where and no limit: only postgres keeps the doubled space' apart from the WHERE, because the WHERE no longer touches the tail; a port whose two goldens differ has kept a cap somewhere.",
       "ops": [
         {
           "op": "selectAll"
@@ -14195,7 +14134,7 @@
     },
     {
       "name": "offset with a where and no limit: only postgres keeps the doubled space",
-      "note": "SPACING, byte-for-byte. to-sql prefixes the limit/offset helper with \" \", and the helper's offset branch starts with ANOTHER leading space (\" OFFSET \"). Postgres is the one dialect that accepts a standalone OFFSET and therefore emits nothing between the two spaces, so the result is `... ORDER BY \"u\".\"id\" ASC  OFFSET 5;` with TWO spaces. A port that normalizes whitespace, or builds the clause list by joining on \" \", collapses it and fails. MySQL and SQLite fill that gap with their sentinel limit (`LIMIT 18446744073709551615` / `LIMIT -1`) and so emit a single space; MSSQL's branch has no leading space and also emits one. The doubled space long predates 7.0.0 and is not a symptom of the removed cap — it is simply what an empty limit slot looks like. What 7.0.0 changed is how many queries can reach it: compare 'offset without a limit on an unfiltered query emits no cap', which is this case without the WHERE and now has the same two spaces, where 6.x filled the slot with `LIMIT 1000`.",
+      "note": "SPACING, byte-for-byte. to-sql prefixes the limit/offset helper with \" \", and the helper's offset branch starts with ANOTHER leading space (\" OFFSET \"). Postgres is the one dialect that accepts a standalone OFFSET and therefore emits nothing between the two spaces, so the result is `... ORDER BY \"u\".\"id\" ASC  OFFSET 5;` with TWO spaces. A port that normalizes whitespace, or builds the clause list by joining on \" \", collapses it and fails. MySQL and SQLite fill that gap with their sentinel limit (`LIMIT 18446744073709551615` / `LIMIT -1`) and so emit a single space; MSSQL's branch has no leading space and also emits one. The doubled space long predates 7.0.0 and is not a symptom of the removed cap \u2014 it is simply what an empty limit slot looks like. What 7.0.0 changed is how many queries can reach it: compare 'offset without a limit on an unfiltered query emits no cap', which is this case without the WHERE and now has the same two spaces, where 6.x filled the slot with `LIMIT 1000`.",
       "ops": [
         {
           "op": "selectAll"
@@ -14274,7 +14213,7 @@
     },
     {
       "name": "order by direction None renders DESC",
-      "note": "defaultOrderBy tests `direction === Ascending` and sends EVERYTHING ELSE to the else branch — so OrderByDirection.None, a public enum member, emits ` DESC`, not ` ASC` and not the dialect default. This silently reverses a caller's result set. A Dart port with an exhaustive switch on the enum either throws or emits nothing for None; either way it diverges. Pinned alongside an explicit Descending and a raw fragment so the ', ' separator between mixed entries is fixed too.",
+      "note": "defaultOrderBy tests `direction === Ascending` and sends EVERYTHING ELSE to the else branch \u2014 so OrderByDirection.None, a public enum member, emits ` DESC`, not ` ASC` and not the dialect default. This silently reverses a caller's result set. A Dart port with an exhaustive switch on the enum either throws or emits nothing for None; either way it diverges. Pinned alongside an explicit Descending and a raw fragment so the ', ' separator between mixed entries is fixed too.",
       "ops": [
         {
           "op": "selectAll"
@@ -14304,37 +14243,37 @@
       "expect": {
         "mssql": {
           "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] ORDER BY [u].[id] DESC, [u].[name] DESC, LENGTH(u.email) ASC;', N'';",
+            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] ORDER BY [u].[id], [u].[name] DESC, LENGTH(u.email) ASC;', N'';",
             "params": []
           },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] ORDER BY [u].[id] DESC, [u].[name] DESC, LENGTH(u.email) ASC;"
+          "raw": "SELECT * FROM [dbo].[users] AS [u] ORDER BY [u].[id], [u].[name] DESC, LENGTH(u.email) ASC;"
         },
         "mysql": {
           "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` ORDER BY `u`.`id` DESC, `u`.`name` DESC, LENGTH(u.email) ASC;",
+            "sql": "SELECT * FROM `users` AS `u` ORDER BY `u`.`id`, `u`.`name` DESC, LENGTH(u.email) ASC;",
             "params": []
           },
-          "raw": "SELECT * FROM `users` AS `u` ORDER BY `u`.`id` DESC, `u`.`name` DESC, LENGTH(u.email) ASC;"
+          "raw": "SELECT * FROM `users` AS `u` ORDER BY `u`.`id`, `u`.`name` DESC, LENGTH(u.email) ASC;"
         },
         "postgres": {
           "prepared": {
-            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" ORDER BY \"u\".\"id\" DESC, \"u\".\"name\" DESC, LENGTH(u.email) ASC;",
+            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" ORDER BY \"u\".\"id\", \"u\".\"name\" DESC, LENGTH(u.email) ASC;",
             "params": []
           },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" ORDER BY \"u\".\"id\" DESC, \"u\".\"name\" DESC, LENGTH(u.email) ASC;"
+          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" ORDER BY \"u\".\"id\", \"u\".\"name\" DESC, LENGTH(u.email) ASC;"
         },
         "sqlite": {
           "prepared": {
-            "sql": "SELECT * FROM \"users\" AS \"u\" ORDER BY \"u\".\"id\" DESC, \"u\".\"name\" DESC, LENGTH(u.email) ASC;",
+            "sql": "SELECT * FROM \"users\" AS \"u\" ORDER BY \"u\".\"id\", \"u\".\"name\" DESC, LENGTH(u.email) ASC;",
             "params": []
           },
-          "raw": "SELECT * FROM \"users\" AS \"u\" ORDER BY \"u\".\"id\" DESC, \"u\".\"name\" DESC, LENGTH(u.email) ASC;"
+          "raw": "SELECT * FROM \"users\" AS \"u\" ORDER BY \"u\".\"id\", \"u\".\"name\" DESC, LENGTH(u.email) ASC;"
         }
       }
     },
     {
       "name": "where with the None operator emits no comparison but still binds the value",
-      "note": "WhereOperator.None is a public enum member and the where parser's switch has no case for it, so the operator slot renders as the empty string between two spaces: `\"u\".\"x\"  ?`. The value is STILL bound (addDynamicValue runs unconditionally), so the params array is unaffected and only the SQL text is broken. A Dart port with an exhaustive `switch` on the enum will not compile without a None arm — whatever it puts there (throw, '=', '') must be the empty string to match.",
+      "note": "WhereOperator.None is a public enum member and the where parser's switch has no case for it, so the operator slot renders as the empty string between two spaces: `\"u\".\"x\"  ?`. The value is STILL bound (addDynamicValue runs unconditionally), so the params array is unaffected and only the SQL text is broken. A Dart port with an exhaustive `switch` on the enum will not compile without a None arm \u2014 whatever it puts there (throw, '=', '') must be the empty string to match.",
       "ops": [
         {
           "op": "selectAll"
@@ -14370,59 +14309,16 @@
       ],
       "expect": {
         "mssql": {
-          "prepared": {
-            "sql": "SET NOCOUNT ON; exec sp_executesql N'SELECT * FROM [dbo].[users] AS [u] WHERE [u].[x]  @p0 AND [u].[y] = @p1;', N'@p0 tinyint, @p1 tinyint', @p0 = 5, @p1 = 6;",
-            "params": []
-          },
-          "raw": "SELECT * FROM [dbo].[users] AS [u] WHERE [u].[x]  5 AND [u].[y] = 6;"
+          "throws": "Where: Unsupported WHERE operator: None"
         },
         "mysql": {
-          "prepared": {
-            "sql": "SELECT * FROM `users` AS `u` WHERE `u`.`x`  ? AND `u`.`y` = ?;",
-            "params": [
-              {
-                "t": "num",
-                "v": 5
-              },
-              {
-                "t": "num",
-                "v": 6
-              }
-            ]
-          },
-          "raw": "SELECT * FROM `users` AS `u` WHERE `u`.`x`  5 AND `u`.`y` = 6;"
+          "throws": "Where: Unsupported WHERE operator: None"
         },
         "postgres": {
-          "prepared": {
-            "sql": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"x\"  $1 AND \"u\".\"y\" = $2;",
-            "params": [
-              {
-                "t": "num",
-                "v": 5
-              },
-              {
-                "t": "num",
-                "v": 6
-              }
-            ]
-          },
-          "raw": "SELECT * FROM \"public\".\"users\" AS \"u\" WHERE \"u\".\"x\"  5 AND \"u\".\"y\" = 6;"
+          "throws": "Where: Unsupported WHERE operator: None"
         },
         "sqlite": {
-          "prepared": {
-            "sql": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"x\"  ? AND \"u\".\"y\" = ?;",
-            "params": [
-              {
-                "t": "num",
-                "v": 5
-              },
-              {
-                "t": "num",
-                "v": 6
-              }
-            ]
-          },
-          "raw": "SELECT * FROM \"users\" AS \"u\" WHERE \"u\".\"x\"  5 AND \"u\".\"y\" = 6;"
+          "throws": "Where: Unsupported WHERE operator: None"
         }
       }
     },
@@ -14635,7 +14531,7 @@
     },
     {
       "name": "cross join with no on conditions and a second join after it",
-      "note": "defaultJoinOns returns early when the ON list is empty, so NO ` ON ` token is emitted — `CROSS JOIN [dbo].[regions] AS [r]` stands alone. A port that always emits ` ON ` (or ` ON 1=1`) breaks. The second join also pins the inter-join separator: joins are joined by a single space, emitted only when `i < len - 1`, so there is no trailing space before WHERE.",
+      "note": "defaultJoinOns returns early when the ON list is empty, so NO ` ON ` token is emitted \u2014 `CROSS JOIN [dbo].[regions] AS [r]` stands alone. A port that always emits ` ON ` (or ` ON 1=1`) breaks. The second join also pins the inter-join separator: joins are joined by a single space, emitted only when `i < len - 1`, so there is no trailing space before WHERE.",
       "ops": [
         {
           "op": "selectAll"
@@ -14727,7 +14623,7 @@
     },
     {
       "name": "identifiers containing every dialect's closing delimiter and a quote",
-      "note": "quoteIdentifier doubles ONLY the dialect's own closing delimiter: `]`->`]]` on MSSQL, `\"`->`\"\"` on Postgres/SQLite, backtick->double-backtick on MySQL. The same name therefore escapes differently in each dialect and passes the other delimiters through untouched — one shared 'escape all the quote chars' helper in a port is wrong everywhere. The apostrophe adds a second layer: MSSQL wraps the finished statement in sp_executesql and doubles EVERY single quote in the SQL text, including the ones inside identifiers, so `al'ias` becomes `[al''ias]` there and stays `\"al'ias\"` elsewhere. The dotted alias pins that a `.` inside a name is quoted as one identifier, never split.",
+      "note": "quoteIdentifier doubles ONLY the dialect's own closing delimiter: `]`->`]]` on MSSQL, `\"`->`\"\"` on Postgres/SQLite, backtick->double-backtick on MySQL. The same name therefore escapes differently in each dialect and passes the other delimiters through untouched \u2014 one shared 'escape all the quote chars' helper in a port is wrong everywhere. The apostrophe adds a second layer: MSSQL wraps the finished statement in sp_executesql and doubles EVERY single quote in the SQL text, including the ones inside identifiers, so `al'ias` becomes `[al''ias]` there and stays `\"al'ias\"` elsewhere. The dotted alias pins that a `.` inside a name is quoted as one identifier, never split.",
       "ops": [
         {
           "op": "selectColumn",
@@ -14815,7 +14711,7 @@
     },
     {
       "name": "an integral double and an int render identically in typescript",
-      "note": "THE Dart divergence. JavaScript has one number type, so `{t:'double', v:2}` and `{t:'int', v:2}` are the same value: both inline as `2` in parseRaw and both declare `@pN tinyint` in MSSQL (Number.isSafeInteger(2.0) is true). Dart's `2.0` is a genuine double: `toString()` gives `2.0` and any type inference sees a double, so a Dart driver that faithfully constructs a double from the `double` tag will emit `2.0` / `float` and fail — while one that collapses both tags to `int` passes this case but fails the fractional ones. The correct Dart driver must construct a double AND render it through the same integral-collapsing path TypeScript uses. -3 is included so the tinyint/smallint boundary is crossed by both tags at once.",
+      "note": "THE Dart divergence. JavaScript has one number type, so `{t:'double', v:2}` and `{t:'int', v:2}` are the same value: both inline as `2` in parseRaw and both declare `@pN tinyint` in MSSQL (Number.isSafeInteger(2.0) is true). Dart's `2.0` is a genuine double: `toString()` gives `2.0` and any type inference sees a double, so a Dart driver that faithfully constructs a double from the `double` tag will emit `2.0` / `float` and fail \u2014 while one that collapses both tags to `int` passes this case but fails the fractional ones. The correct Dart driver must construct a double AND render it through the same integral-collapsing path TypeScript uses. -3 is included so the tinyint/smallint boundary is crossed by both tags at once.",
       "ops": [
         {
           "op": "selectAll"
@@ -14959,7 +14855,7 @@
     },
     {
       "name": "doubles that render in exponent notation",
-      "note": "Number rendering, the other half. 1e21 is an integer by `Number.isInteger` but NOT by `Number.isSafeInteger`, so MSSQL declares it `float` (deliberately — src/parser/to-sql.ts notes that `bigint` has no scientific-notation literal and SQL Server rejected the batch) and inlines it as `1e+21` via toString(). 1.5e-7 renders `1.5e-7`; 0.1 renders `0.1`. Dart's `double.toString()` agrees on all three ONLY if the port uses the shortest-round-trip form and does not reach for `toStringAsFixed`/`NumberFormat`. dart2js and the Dart VM must also agree — this is the case that catches them if they do not.",
+      "note": "Number rendering, the other half. 1e21 is an integer by `Number.isInteger` but NOT by `Number.isSafeInteger`, so MSSQL declares it `float` (deliberately \u2014 src/parser/to-sql.ts notes that `bigint` has no scientific-notation literal and SQL Server rejected the batch) and inlines it as `1e+21` via toString(). 1.5e-7 renders `1.5e-7`; 0.1 renders `0.1`. Dart's `double.toString()` agrees on all three ONLY if the port uses the shortest-round-trip form and does not reach for `toStringAsFixed`/`NumberFormat`. dart2js and the Dart VM must also agree \u2014 this is the case that catches them if they do not.",
       "ops": [
         {
           "op": "selectAll"
@@ -14989,7 +14885,7 @@
           "operator": "Equals",
           "value": {
             "t": "double",
-            "v": 1.5e-7
+            "v": 1.5e-07
           }
         },
         {
@@ -15024,7 +14920,7 @@
               },
               {
                 "t": "num",
-                "v": 1.5e-7
+                "v": 1.5e-07
               },
               {
                 "t": "num",
@@ -15044,7 +14940,7 @@
               },
               {
                 "t": "num",
-                "v": 1.5e-7
+                "v": 1.5e-07
               },
               {
                 "t": "num",
@@ -15064,7 +14960,7 @@
               },
               {
                 "t": "num",
-                "v": 1.5e-7
+                "v": 1.5e-07
               },
               {
                 "t": "num",
@@ -15078,7 +14974,7 @@
     },
     {
       "name": "datetime precision below a millisecond is truncated",
-      "note": "JavaScript's Date holds MILLISECONDS; Dart's DateTime holds MICROSECONDS. Given `...12:00:00.123456Z`, `new Date(...).toISOString()` yields `.123Z` — the extra digits are gone from both the bound param and MSSQL's inlined literal. Dart's `DateTime.parse` keeps them and `toIso8601String()` emits `.123456Z`, so the Dart driver MUST truncate to milliseconds at the boundary. Also pins a pre-epoch instant (negative epoch ms, a classic overflow/format trap) and a whereBetween of two datetimes, whose two values must bind low-then-high between the surrounding predicates.",
+      "note": "JavaScript's Date holds MILLISECONDS; Dart's DateTime holds MICROSECONDS. Given `...12:00:00.123456Z`, `new Date(...).toISOString()` yields `.123Z` \u2014 the extra digits are gone from both the bound param and MSSQL's inlined literal. Dart's `DateTime.parse` keeps them and `toIso8601String()` emits `.123456Z`, so the Dart driver MUST truncate to milliseconds at the boundary. Also pins a pre-epoch instant (negative epoch ms, a classic overflow/format trap) and a whereBetween of two datetimes, whose two values must bind low-then-high between the surrounding predicates.",
       "ops": [
         {
           "op": "selectAll"
@@ -15212,7 +15108,7 @@
     },
     {
       "name": "a subquery inside a subquery binds depth first",
-      "note": "INTERACTION. A whereIn subquery whose own WHERE contains a NOT EXISTS subquery — two levels of nesting below the outer statement. Each level is rendered by a fresh defaultToSql and its values are spliced into the parent at the position of its placeholder, so the order is 50 (inner-1 where), 5 (inner-2 where), then the outer 'x'. Both inner statements are marked isInnerStatement, so neither gets a trailing ';' — the whole statement has exactly one, at the very end. (Before 7.0.0 that flag also kept the MSSQL safety-net TOP out of each inner statement, and the outer query's WHERE kept it off the outer one. The cap is gone, so the semicolon and the bind order are what remains.)",
+      "note": "INTERACTION. A whereIn subquery whose own WHERE contains a NOT EXISTS subquery \u2014 two levels of nesting below the outer statement. Each level is rendered by a fresh defaultToSql and its values are spliced into the parent at the position of its placeholder, so the order is 50 (inner-1 where), 5 (inner-2 where), then the outer 'x'. Both inner statements are marked isInnerStatement, so neither gets a trailing ';' \u2014 the whole statement has exactly one, at the very end. (Before 7.0.0 that flag also kept the MSSQL safety-net TOP out of each inner statement, and the outer query's WHERE kept it off the outer one. The cap is gone, so the semicolon and the bind order are what remains.)",
       "ops": [
         {
           "op": "selectAll"
@@ -15517,7 +15413,7 @@
     },
     {
       "name": "an empty where group emits empty parentheses",
-      "note": "whereGroup(() => {}) still pushes its three states, so whereStates is non-empty and the query renders `WHERE ()` — no predicate, no bound value, on all four dialects. The parentheses are emitted even though the child produced no SQL: the GroupBuilder branch splices an empty string rather than pruning the group, and a port that prunes empty groups emits a bare `SELECT * FROM users` and fails. Until 7.0.0 there was a second and sharper consequence: because whereStates.length > 0, MSSQL's safety-net TOP did not fire, so an unfiltered SELECT lost its row cap simply by adding a group that filtered nothing. That was the plainest demonstration that the cap keyed off the wrong thing, and it is part of why the cap is gone.",
+      "note": "whereGroup(() => {}) still pushes its three states, so whereStates is non-empty and the query renders `WHERE ()` \u2014 no predicate, no bound value, on all four dialects. The parentheses are emitted even though the child produced no SQL: the GroupBuilder branch splices an empty string rather than pruning the group, and a port that prunes empty groups emits a bare `SELECT * FROM users` and fails. Until 7.0.0 there was a second and sharper consequence: because whereStates.length > 0, MSSQL's safety-net TOP did not fire, so an unfiltered SELECT lost its row cap simply by adding a group that filtered nothing. That was the plainest demonstration that the cap keyed off the wrong thing, and it is part of why the cap is gone.",
       "ops": [
         {
           "op": "selectAll"
@@ -15656,7 +15552,7 @@
     },
     {
       "name": "a cte in front of an update binds before the set and where values",
-      "note": "to-sql emits the WITH clause BEFORE it branches on queryType, so a CTE attached to an UPDATE renders `WITH \"stale\" AS (SELECT ...) UPDATE ...` — and its values occupy the FIRST parameter slots, ahead of the SET value and then the WHERE value. Nothing in the authored corpus combines a CTE with a write statement; a port that builds writes through a separate code path drops the WITH entirely (silently updating everything) or binds the CTE value last. On MSSQL this also stacks with the aliased-UPDATE rewrite: `UPDATE [u] SET ... FROM [dbo].[users] AS [u] WHERE ...`, with the FROM appended after the SET list.",
+      "note": "to-sql emits the WITH clause BEFORE it branches on queryType, so a CTE attached to an UPDATE renders `WITH \"stale\" AS (SELECT ...) UPDATE ...` \u2014 and its values occupy the FIRST parameter slots, ahead of the SET value and then the WHERE value. Nothing in the authored corpus combines a CTE with a write statement; a port that builds writes through a separate code path drops the WITH entirely (silently updating everything) or binds the CTE value last. On MSSQL this also stacks with the aliased-UPDATE rewrite: `UPDATE [u] SET ... FROM [dbo].[users] AS [u] WHERE ...`, with the FROM appended after the SET list.",
       "ops": [
         {
           "op": "cte",
@@ -15779,8 +15675,8 @@
       }
     },
     {
-      "name": "update with an owner on mysql does not throw and silently discards join order by and limit",
-      "note": "Two divergences in one statement. (1) The MySQL owner guard lives ONLY in default-from.ts — default-update.ts has no such check, so `updateTableWithOwner('sales', ...)` emits `sales`.`orders` on MySQL where the identical FROM would throw 'MySQL does not support table owners'. A port that centralizes the owner check throws here and fails. (2) The Update branch of to-sql returns immediately after UPDATE/SET/WHERE, so the joinTable, orderByColumn and limit ops on this builder produce NOTHING — no error, no SQL, and the join's onValue (7) is NOT bound. Params are exactly [9.5, 1]. A port whose write path shares the SELECT clause walk emits a JOIN and an extra parameter.",
+      "name": "update with an owner on mysql throws; other dialects discard join order by and limit on update",
+      "note": "Two behaviours in one statement. (1) MySQL rejects `updateTableWithOwner` with `Update: MySQL does not support table owners`. (2) On dialects that accept the owner, the Update branch of to-sql returns immediately after UPDATE/SET/WHERE, so joinTable, orderByColumn and limit ops on this builder produce nothing \u2014 no error, no SQL, and the join's onValue is NOT bound.",
       "ops": [
         {
           "op": "updateTableWithOwner",
@@ -15844,20 +15740,7 @@
           "raw": "UPDATE [o] SET [total] = 9.5 FROM [sales].[orders] AS [o] WHERE [o].[id] = 1;"
         },
         "mysql": {
-          "prepared": {
-            "sql": "UPDATE `sales`.`orders` AS `o` SET `total` = ? WHERE `o`.`id` = ?;",
-            "params": [
-              {
-                "t": "num",
-                "v": 9.5
-              },
-              {
-                "t": "num",
-                "v": 1
-              }
-            ]
-          },
-          "raw": "UPDATE `sales`.`orders` AS `o` SET `total` = 9.5 WHERE `o`.`id` = 1;"
+          "throws": "Update: MySQL does not support table owners"
         },
         "postgres": {
           "prepared": {
@@ -15895,7 +15778,7 @@
     },
     {
       "name": "multi builder restarts placeholder numbering per statement and concatenates without a separator",
-      "note": "parseMulti loops `sql += parse(state, config)` — each statement is prepared INDEPENDENTLY, so Postgres numbers both statements from $1 (the second statement's values are NOT $3/$4) and MSSQL emits two complete `SET NOCOUNT ON; exec sp_executesql ...` batches. There is NO separator between statements: each ends with ';' and the next begins immediately, so the golden contains `...;INSERT` with no space, while the transaction prologue DOES add one (`BEGIN; `). Note also that parseMulti closes with `COMMIT;` while parseMultiRaw closes with `COMMIT; ` — a trailing space in raw only. A port that joins statements with '\\n' or ' ', or that threads one placeholder counter across the batch, fails.",
+      "note": "parseMulti loops `sql += parse(state, config)` \u2014 each statement is prepared INDEPENDENTLY, so Postgres numbers both statements from $1 (the second statement's values are NOT $3/$4) and MSSQL emits two complete `SET NOCOUNT ON; exec sp_executesql ...` batches. There is NO separator between statements: each ends with ';' and the next begins immediately, so the golden contains `...;INSERT` with no space, while the transaction prologue DOES add one (`BEGIN; `). Note also that parseMulti closes with `COMMIT;` while parseMultiRaw closes with `COMMIT; ` \u2014 a trailing space in raw only. A port that joins statements with '\\n' or ' ', or that threads one placeholder counter across the batch, fails.",
       "transaction": "on",
       "builders": [
         {
@@ -15962,28 +15845,28 @@
             "sql": "BEGIN TRANSACTION; SET NOCOUNT ON; exec sp_executesql N'INSERT INTO [dbo].[users] ([name], [age]) VALUES (@p0, @p1);', N'@p0 nvarchar(max), @p1 tinyint', @p0 = N'Ada', @p1 = 36;SET NOCOUNT ON; exec sp_executesql N'UPDATE [dbo].[users] SET [active] = @p0 WHERE [users].[name] = @p1;', N'@p0 bit, @p1 nvarchar(max)', @p0 = 1, @p1 = N'Ada';COMMIT TRANSACTION;",
             "params": []
           },
-          "raw": "BEGIN TRANSACTION; INSERT INTO [dbo].[users] ([name], [age]) VALUES (Ada, 36);UPDATE [dbo].[users] SET [active] = true WHERE [users].[name] = Ada;COMMIT TRANSACTION; "
+          "raw": "BEGIN TRANSACTION; INSERT INTO [dbo].[users] ([name], [age]) VALUES (Ada, 36);UPDATE [dbo].[users] SET [active] = true WHERE [users].[name] = Ada;COMMIT TRANSACTION;"
         },
         "mysql": {
           "prepared": {
             "sql": "START TRANSACTION; INSERT INTO `users` (`name`, `age`) VALUES (?, ?);UPDATE `users` SET `active` = ? WHERE `users`.`name` = ?;COMMIT;",
             "params": []
           },
-          "raw": "START TRANSACTION; INSERT INTO `users` (`name`, `age`) VALUES (Ada, 36);UPDATE `users` SET `active` = true WHERE `users`.`name` = Ada;COMMIT; "
+          "raw": "START TRANSACTION; INSERT INTO `users` (`name`, `age`) VALUES (Ada, 36);UPDATE `users` SET `active` = true WHERE `users`.`name` = Ada;COMMIT;"
         },
         "postgres": {
           "prepared": {
             "sql": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"age\") VALUES ($1, $2);UPDATE \"public\".\"users\" SET \"active\" = $1 WHERE \"users\".\"name\" = $2;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"age\") VALUES (Ada, 36);UPDATE \"public\".\"users\" SET \"active\" = true WHERE \"users\".\"name\" = Ada;COMMIT; "
+          "raw": "BEGIN; INSERT INTO \"public\".\"users\" (\"name\", \"age\") VALUES (Ada, 36);UPDATE \"public\".\"users\" SET \"active\" = true WHERE \"users\".\"name\" = Ada;COMMIT;"
         },
         "sqlite": {
           "prepared": {
             "sql": "BEGIN; INSERT INTO \"users\" (\"name\", \"age\") VALUES (?, ?);UPDATE \"users\" SET \"active\" = ? WHERE \"users\".\"name\" = ?;COMMIT;",
             "params": []
           },
-          "raw": "BEGIN; INSERT INTO \"users\" (\"name\", \"age\") VALUES (Ada, 36);UPDATE \"users\" SET \"active\" = true WHERE \"users\".\"name\" = Ada;COMMIT; "
+          "raw": "BEGIN; INSERT INTO \"users\" (\"name\", \"age\") VALUES (Ada, 36);UPDATE \"users\" SET \"active\" = true WHERE \"users\".\"name\" = Ada;COMMIT;"
         }
       }
     }

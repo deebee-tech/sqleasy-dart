@@ -7,12 +7,25 @@
 library;
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import '../errors/parser_error.dart';
 import 'sql_value.dart';
 
+String _toHex(Uint8List bytes) {
+  final buffer = StringBuffer();
+  for (final b in bytes) {
+    buffer.write(b.toRadixString(16).padLeft(2, '0'));
+  }
+  return buffer.toString();
+}
+
 /// The T-SQL type declared for an `@pN` parameter, inferred from its value.
 String mssqlParameterType(Object? value) {
+  if (value is Uint8List) {
+    return 'varbinary(max)';
+  }
+
   if (value is String) {
     return 'nvarchar(max)';
   }
@@ -51,6 +64,10 @@ String mssqlParameterType(Object? value) {
     return 'bit';
   }
 
+  if (value is BigInt) {
+    return 'bigint';
+  }
+
   return 'nvarchar(max)';
 }
 
@@ -58,6 +75,9 @@ String mssqlParameterType(Object? value) {
 String mssqlParameterValue(Object? value) {
   if (value == null) {
     return 'NULL';
+  }
+  if (value is Uint8List) {
+    return '0x${_toHex(value)}';
   }
   if (value is num) {
     return formatNumber(value);
@@ -71,11 +91,9 @@ String mssqlParameterValue(Object? value) {
   if (value is String) {
     return "N'${value.replaceAll("'", "''")}'";
   }
-  // A BigInt is not a `num`; render its exact decimal as an N-literal, matching TypeScript's
-  // `default` branch (typeof 'bigint' -> N'<digits>') and this package's own valueToDebugString.
-  // Without this it would fall to jsonEncode below, which cannot encode a BigInt and throws.
+  // Match TypeScript's `typeof 'bigint'` arm: bare decimal digits, declared as `bigint`.
   if (value is BigInt) {
-    return "N'${value.toString().replaceAll("'", "''")}'";
+    return value.toString();
   }
 
   return "N'${jsonEncode(value).replaceAll("'", "''")}'";

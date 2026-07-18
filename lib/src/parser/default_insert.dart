@@ -1,16 +1,16 @@
 import '../configuration.dart';
+import '../enums.dart';
 import '../errors/parser_error.dart';
 import '../identifier.dart';
 import '../sql_helper.dart';
 import '../state.dart';
-import '../enums.dart';
 
 SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
   final sqlHelper = SqlHelper(mode);
 
   final insertState = state.insertState;
   if (insertState == null) {
-    throw ParserError(ParserArea.general, 'No insert state provided');
+    throw ParserError(ParserArea.insert, 'No insert state provided');
   }
 
   if ((insertState.raw ?? '').isNotEmpty) {
@@ -18,9 +18,17 @@ SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
     return sqlHelper;
   }
 
+  if ((insertState.tableName ?? '').isEmpty) {
+    throw ParserError(ParserArea.insert, 'INSERT requires a table');
+  }
+
   sqlHelper.addSqlSnippet('INSERT INTO ');
 
   if ((insertState.owner ?? '').isNotEmpty) {
+    if (config.databaseType == DatabaseType.mysql) {
+      throw ParserError(
+          ParserArea.insert, 'MySQL does not support table owners');
+    }
     sqlHelper.addSqlSnippet(
         quoteIdentifier(insertState.owner, config.identifierDelimiters));
     sqlHelper.addSqlSnippet('.');
@@ -43,26 +51,39 @@ SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
     sqlHelper.addSqlSnippet(')');
   }
 
-  if (insertState.values.isNotEmpty) {
-    sqlHelper.addSqlSnippet(' VALUES ');
+  if (insertState.values.isEmpty) {
+    throw ParserError(
+        ParserArea.insert, 'INSERT requires at least one VALUES row');
+  }
 
-    for (var r = 0; r < insertState.values.length; r++) {
-      sqlHelper.addSqlSnippet('(');
+  final columnCount = insertState.columns.length;
 
-      final row = insertState.values[r];
-      for (var c = 0; c < row.length; c++) {
-        sqlHelper.addDynamicValue(row[c]);
+  sqlHelper.addSqlSnippet(' VALUES ');
 
-        if (c < row.length - 1) {
-          sqlHelper.addSqlSnippet(', ');
-        }
-      }
+  for (var r = 0; r < insertState.values.length; r++) {
+    sqlHelper.addSqlSnippet('(');
 
-      sqlHelper.addSqlSnippet(')');
+    final row = insertState.values[r];
 
-      if (r < insertState.values.length - 1) {
+    if (columnCount > 0 && row.length != columnCount) {
+      throw ParserError(
+        ParserArea.insert,
+        'INSERT column count ($columnCount) does not match value count (${row.length}) for row ${r + 1}',
+      );
+    }
+
+    for (var c = 0; c < row.length; c++) {
+      sqlHelper.addDynamicValue(row[c]);
+
+      if (c < row.length - 1) {
         sqlHelper.addSqlSnippet(', ');
       }
+    }
+
+    sqlHelper.addSqlSnippet(')');
+
+    if (r < insertState.values.length - 1) {
+      sqlHelper.addSqlSnippet(', ');
     }
   }
 

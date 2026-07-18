@@ -73,7 +73,8 @@ SqlHelper defaultSelect(
     }
 
     if (selectState.builderType == BuilderType.selectBuilder) {
-      final subHelper = defaultToSql(selectState.subquery, config, mode);
+      final subHelper =
+          defaultToSql(selectState.subquery, config, mode, options);
 
       sqlHelper.addSqlSnippetWithValues(
           '(${subHelper.getSql()})', subHelper.getValues());

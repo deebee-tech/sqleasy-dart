@@ -7,8 +7,12 @@ enum ParserArea {
   from('From'),
   join('Join'),
   where('Where'),
+  having('Having'),
   orderBy('OrderBy'),
   limitOffset('LimitOffset'),
+  insert('Insert'),
+  update('Update'),
+  delete('Delete'),
   general('General');
 
   const ParserArea(this.value);

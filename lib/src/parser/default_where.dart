@@ -6,7 +6,12 @@ import '../sql_helper.dart';
 import '../state.dart';
 import 'to_sql.dart';
 
-SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultWhere(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.whereStates.isEmpty) {
@@ -121,6 +126,20 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
           quoteIdentifier(cur.columnName, config.identifierDelimiters));
       sqlHelper.addSqlSnippet(' ');
 
+      final value = cur.values.isNotEmpty ? cur.values[0] : null;
+
+      // `col = NULL` is never true under SQL three-valued logic. Emit IS NULL / IS NOT NULL
+      // so callers who pass null get a predicate that can match rows.
+      if ((cur.whereOperator == WhereOperator.equals ||
+              cur.whereOperator == WhereOperator.notEquals) &&
+          value == null) {
+        sqlHelper.addSqlSnippet(
+          cur.whereOperator == WhereOperator.equals ? 'IS NULL' : 'IS NOT NULL',
+        );
+        spaceAfter();
+        continue;
+      }
+
       switch (cur.whereOperator) {
         case WhereOperator.equals:
           sqlHelper.addSqlSnippet('=');
@@ -138,12 +157,15 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
           sqlHelper.addSqlSnippet('LIKE');
         case WhereOperator.notLike:
           sqlHelper.addSqlSnippet('NOT LIKE');
-        case WhereOperator.none:
-          break;
+        default:
+          throw ParserError(
+            ParserArea.where,
+            'Unsupported WHERE operator: ${cur.whereOperator.wire}',
+          );
       }
 
       sqlHelper.addSqlSnippet(' ');
-      sqlHelper.addDynamicValue(cur.values[0]);
+      sqlHelper.addDynamicValue(value);
       spaceAfter();
       continue;
     }
@@ -165,7 +187,7 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
 
     if (cur.builderType == BuilderType.whereExistsBuilder) {
       sqlHelper.addSqlSnippet('EXISTS (');
-      final subHelper = defaultToSql(cur.subquery, config, mode);
+      final subHelper = defaultToSql(cur.subquery, config, mode, options);
       sqlHelper.addSqlSnippetWithValues(
           subHelper.getSql(), subHelper.getValues());
       sqlHelper.addSqlSnippet(')');
@@ -180,7 +202,7 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
       sqlHelper.addSqlSnippet(
           quoteIdentifier(cur.columnName, config.identifierDelimiters));
       sqlHelper.addSqlSnippet(' IN (');
-      final subHelper = defaultToSql(cur.subquery, config, mode);
+      final subHelper = defaultToSql(cur.subquery, config, mode, options);
       sqlHelper.addSqlSnippetWithValues(
           subHelper.getSql(), subHelper.getValues());
       sqlHelper.addSqlSnippet(')');
@@ -216,7 +238,7 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
 
     if (cur.builderType == BuilderType.whereNotExistsBuilder) {
       sqlHelper.addSqlSnippet('NOT EXISTS (');
-      final subHelper = defaultToSql(cur.subquery, config, mode);
+      final subHelper = defaultToSql(cur.subquery, config, mode, options);
       sqlHelper.addSqlSnippetWithValues(
           subHelper.getSql(), subHelper.getValues());
       sqlHelper.addSqlSnippet(')');
@@ -231,7 +253,7 @@ SqlHelper defaultWhere(QueryState state, Dialect config, ParserMode mode) {
       sqlHelper.addSqlSnippet(
           quoteIdentifier(cur.columnName, config.identifierDelimiters));
       sqlHelper.addSqlSnippet(' NOT IN (');
-      final subHelper = defaultToSql(cur.subquery, config, mode);
+      final subHelper = defaultToSql(cur.subquery, config, mode, options);
       sqlHelper.addSqlSnippetWithValues(
           subHelper.getSql(), subHelper.getValues());
       sqlHelper.addSqlSnippet(')');

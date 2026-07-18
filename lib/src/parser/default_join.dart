@@ -6,7 +6,12 @@ import '../sql_helper.dart';
 import '../state.dart';
 import 'to_sql.dart';
 
-SqlHelper defaultJoin(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultJoin(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.joinStates.isEmpty) {
@@ -36,6 +41,12 @@ SqlHelper defaultJoin(QueryState state, Dialect config, ParserMode mode) {
       case JoinType.rightOuter:
         sqlHelper.addSqlSnippet('RIGHT OUTER JOIN ');
       case JoinType.fullOuter:
+        if (config.databaseType == DatabaseType.mysql) {
+          throw ParserError(
+            ParserArea.join,
+            'MySQL does not support FULL OUTER JOIN',
+          );
+        }
         sqlHelper.addSqlSnippet('FULL OUTER JOIN ');
       case JoinType.cross:
         sqlHelper.addSqlSnippet('CROSS JOIN ');
@@ -44,6 +55,12 @@ SqlHelper defaultJoin(QueryState state, Dialect config, ParserMode mode) {
     }
 
     if (joinState.builderType == BuilderType.joinTable) {
+      if ((joinState.owner ?? '').isNotEmpty &&
+          config.databaseType == DatabaseType.mysql) {
+        throw ParserError(
+            ParserArea.join, 'MySQL does not support table owners');
+      }
+
       if ((joinState.owner ?? '').isNotEmpty) {
         sqlHelper.addSqlSnippet(
             quoteIdentifier(joinState.owner, config.identifierDelimiters));
@@ -69,7 +86,7 @@ SqlHelper defaultJoin(QueryState state, Dialect config, ParserMode mode) {
     }
 
     if (joinState.builderType == BuilderType.joinBuilder) {
-      final subHelper = defaultToSql(joinState.subquery, config, mode);
+      final subHelper = defaultToSql(joinState.subquery, config, mode, options);
 
       sqlHelper.addSqlSnippetWithValues(
           '(${subHelper.getSql()})', subHelper.getValues());

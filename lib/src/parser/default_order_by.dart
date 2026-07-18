@@ -38,9 +38,10 @@ SqlHelper defaultOrderBy(QueryState state, Dialect config, ParserMode mode) {
 
       if (orderByState.direction == OrderByDirection.ascending) {
         sqlHelper.addSqlSnippet(' ASC');
-      } else {
+      } else if (orderByState.direction == OrderByDirection.descending) {
         sqlHelper.addSqlSnippet(' DESC');
       }
+      // OrderByDirection.none → omit direction (dialect default).
 
       if (i < state.orderByStates.length - 1) {
         sqlHelper.addSqlSnippet(', ');

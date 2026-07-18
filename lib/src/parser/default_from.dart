@@ -6,7 +6,12 @@ import '../sql_helper.dart';
 import '../state.dart';
 import 'to_sql.dart';
 
-SqlHelper defaultFrom(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultFrom(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.fromStates.isEmpty) {
@@ -57,7 +62,7 @@ SqlHelper defaultFrom(QueryState state, Dialect config, ParserMode mode) {
     }
 
     if (fromState.builderType == BuilderType.fromBuilder) {
-      final subHelper = defaultToSql(fromState.subquery, config, mode);
+      final subHelper = defaultToSql(fromState.subquery, config, mode, options);
 
       // Merge the subquery's bound values, not just its SQL — else its placeholders ship with no
       // parameters and bind NULL.

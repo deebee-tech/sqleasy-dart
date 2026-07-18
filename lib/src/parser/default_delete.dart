@@ -9,7 +9,7 @@ SqlHelper defaultDelete(QueryState state, Dialect config, ParserMode mode) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.fromStates.isEmpty) {
-    throw ParserError(ParserArea.general, 'DELETE requires a table');
+    throw ParserError(ParserArea.delete, 'DELETE requires a table');
   }
 
   final delim = config.identifierDelimiters;
@@ -18,6 +18,12 @@ SqlHelper defaultDelete(QueryState state, Dialect config, ParserMode mode) {
   final fromState = state.fromStates[0];
   final owner = fromState.owner ?? '';
   final alias = fromState.alias ?? '';
+
+  if (owner.isNotEmpty && config.databaseType == DatabaseType.mysql) {
+    throw ParserError(
+        ParserArea.delete, 'MySQL does not support table owners');
+  }
+
   final qualified = (owner.isNotEmpty ? '${quote(owner)}.' : '') +
       quote(fromState.tableName ?? '');
 

@@ -9,12 +9,12 @@ SqlHelper defaultUpdate(QueryState state, Dialect config, ParserMode mode) {
   final sqlHelper = SqlHelper(mode);
 
   if (state.fromStates.isEmpty) {
-    throw ParserError(ParserArea.general, 'UPDATE requires a table');
+    throw ParserError(ParserArea.update, 'UPDATE requires a table');
   }
 
   if (state.updateStates.isEmpty) {
     throw ParserError(
-        ParserArea.general, 'UPDATE requires at least one SET column');
+        ParserArea.update, 'UPDATE requires at least one SET column');
   }
 
   final delim = config.identifierDelimiters;
@@ -23,6 +23,12 @@ SqlHelper defaultUpdate(QueryState state, Dialect config, ParserMode mode) {
   final fromState = state.fromStates[0];
   final owner = fromState.owner ?? '';
   final alias = fromState.alias ?? '';
+
+  if (owner.isNotEmpty && config.databaseType == DatabaseType.mysql) {
+    throw ParserError(
+        ParserArea.update, 'MySQL does not support table owners');
+  }
+
   final qualified = (owner.isNotEmpty ? '${quote(owner)}.' : '') +
       quote(fromState.tableName ?? '');
   // T-SQL has no `UPDATE table AS alias` — the alias must come from a FROM clause:
