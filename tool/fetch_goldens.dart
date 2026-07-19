@@ -14,7 +14,7 @@ import 'dart:io';
 /// A copy is vendored into this repo so the tests run offline and so that a change to the contract
 /// shows up as a reviewable diff rather than a silent behaviour shift under CI.
 ///
-const corpusVersion = '13.0.0';
+const corpusVersion = '9.0.0';
 
 const _repo = 'deebee-tech/sqleasy';
 const _path = 'goldens/corpus.json';

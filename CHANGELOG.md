@@ -1,155 +1,38 @@
 # Changelog
 
-## 7.0.0
-
-Tracks the TypeScript `@deebeetech/sqleasy` **13.0.0** golden corpus (was pinned to 12.0.0). Mirrors
-the "Milestone 5 / Tier 3" feature set exactly: 314 golden cases (was 290).
-
-**New features:**
-
-- **JSON operators** — `selectJsonExtract()`, `whereJsonExtract()`/`whereJsonContains()`, and
-  `havingJsonExtract()`/`havingJsonContains()` with dialect-aware `->`/`->>`/`JSON_EXTRACT`/
-  `JSON_VALUE`/`json_extract` emission.
-- **Full-text search** — `whereMatch()`/`havingMatch()` with `FullTextMode` (Postgres tsvector,
-  MySQL MATCH … AGAINST, MSSQL FREETEXT/CONTAINS, SQLite FTS MATCH); `whereMatchRaw()` escape hatch.
-- **MSSQL MERGE upsert** — `onConflictDoNothing()`/`onConflictDoUpdate()` on INSERT now emit
-  `MERGE INTO … WHEN NOT MATCHED … WHEN MATCHED THEN UPDATE SET …` on MSSQL.
-- **LATERAL / APPLY** — `fromLateral()`, `joinCrossApply()`/`joinOuterApply()`/`joinLateral()` with
-  dialect mapping (CROSS/OUTER APPLY on MSSQL, LATERAL on Postgres/MySQL).
-- **Table-valued functions** — `fromTableFunction()`/`fromTableFunctionWithOwner()`/`fromFunctionRaw()`.
-- **GROUPING SETS / CUBE / ROLLUP** — `groupByRollup()`/`groupByCube()`/`groupByGroupingSets()`.
-- **FETCH WITH TIES** — `limitWithTies()`/`clearLimitWithTies()` (`FETCH FIRST n ROWS WITH TIES`).
-- **Query hints** — `hintUseIndex()`/`hintForceIndex()` (MySQL), `hintMssqlOption()` (MSSQL
-  `OPTION (...)`), `hintRaw()`, and `clearHints()`.
-
-New public API: `JsonExtractMode`, `FullTextMode`, `MatchColumnRef`, and `GroupBySetRef`, exported
-from `package:sqleasy/sqleasy.dart`.
-
-Nothing to migrate: the addition above is purely additive — no previously emitted SQL changes.
-
-## 6.0.0
-
-Tracks the TypeScript `@deebeetech/sqleasy` **12.0.0** golden corpus (was pinned to 11.0.0). Mirrors
-the "Milestone 4 / Tier 2" feature set exactly: 290 golden cases (was 253).
-
-**New features:**
-
-- **Window functions** — `selectWindow()` with a structured `WindowBuilder` for `PARTITION BY`,
-  `ORDER BY` (including `NULLS FIRST`/`NULLS LAST`), and optional `ROWS`/`RANGE` frames (`frame()` /
-  `frameRaw()`).
-- **`DISTINCT ON (...)`** — Postgres-only via `distinctOn()` / `clearDistinctOn()`.
-- **`INSERT ... SELECT`** — `insertSelect()` as an alternative row source to `insertValues()`.
-- **`ORDER BY NULLS FIRST/LAST`** — optional fourth argument on `orderByColumn()`; native on
-  Postgres/SQLite, emulated on MySQL/MSSQL.
-- **CTE column lists** — optional `columns` parameter on `cte()` / `cteRecursive()`.
-- **Null-safe comparisons** — `WhereOperator.isDistinctFrom` / `isNotDistinctFrom` (MSSQL throws).
-- **Richer JOIN ON** — `onIn`/`onNotIn`/`onBetween`/`onNotBetween`, plus `JoinOperator.like` /
-  `notLike` on `on`/`onValue`.
-- **Join-backed UPDATE/DELETE** — `.join(...)` combined with `.updateTable()` / `.deleteFrom()` on
-  MySQL, MSSQL, and Postgres (Postgres translates ON conditions into a `WHERE` predicate).
-
-New public API: `WindowBuilder`, `NullsOrder`, `FrameBoundType`, `FrameUnit`, and `DistinctOnRef`,
-exported from `package:sqleasy/sqleasy.dart`.
-
-Nothing to migrate: the addition above is purely additive — no previously emitted SQL changes.
-
-## 5.0.0
-
-Tracks the TypeScript `@deebeetech/sqleasy` **11.0.0** golden corpus (was pinned to 10.0.0). Mirrors
-the "Milestone 3 / stored procedures & functions" feature set exactly: 253 golden cases (was 230).
-
-**New features:**
-
-- **First-class stored procedures/functions** — a new statement family, not a raw escape.
-  `callProcedure()`/`callProcedureWithOwner()` and `callFunction()`/`callFunctionWithOwner()` start
-  a call; `procParam()`/`procParams()`/`procParamNamed()`/`procParamRaw()` add arguments, and
-  `procParamOut()`/`procParamInOut()` add procedure-only output parameters; `clearCall()` removes
-  it. Postgres emits `CALL name(...)` for procedures and `SELECT name(...)`/`SELECT * FROM
-  name(...)` for functions (scalar vs. set-returning, via `CallReturnIntent`); MySQL emits `CALL
-  name(...)` for procedures and `SELECT name(...)` for functions (it has no table-valued functions
-  — `CallReturnIntent.resultSet` throws there); MSSQL emits `EXEC name ...`, with `DECLARE`d local
-  variables prepended for OUT/INOUT parameters. SQLite has no stored procedures or functions at all
-  and throws a clear `ParserError`. Named arguments (Postgres `name := value`, MSSQL `@name =
-  value`) are supported everywhere except MySQL, which has no named-argument syntax; a positional
-  argument after a named one throws, matching the underlying SQL's own ordering rule. A call
-  integrates with `parse()`/`parsePrepared()`/`parseRaw()` and `MultiBuilder` like any other
-  statement, but refuses to be combined with a CTE or `returning()`.
-
-New public API: `CallKind`, `CallParamDirection`, and `CallReturnIntent` enums, exported from
-`package:sqleasy/sqleasy.dart`.
-
-Nothing to migrate: the addition above is purely additive — no previously emitted SQL changes.
-
-## 4.0.0
-
-Tracks the TypeScript `@deebeetech/sqleasy` **10.0.0** golden corpus (was pinned to 9.0.0). Mirrors
-the "Milestone 2 / Tier 1" feature set exactly: 230 golden cases (was 189).
-
-**New features:**
-
-- **HAVING now has full parity with WHERE** — `havingBetween`, `havingInValues`/
-  `havingInWithBuilder`, `havingNotInValues`/`havingNotInWithBuilder`, `havingNull`/
-  `havingNotNull`, `havingExists`/`havingNotExists`, and `havingGroup`, sharing WHERE's
-  combinator/spacing rules term for term. `HavingState` gained a `subquery` field to carry the
-  nested builder state, mirroring `WhereState`.
-- **`WhereOperator.ilike`/`notIlike`** — case-insensitive `LIKE`, usable on both WHERE and HAVING.
-  Postgres emits native `ILIKE`/`NOT ILIKE`; MySQL, SQLite, and MSSQL (none of which have `ILIKE`)
-  get an equivalent `LOWER(col) LIKE LOWER(?)` rewrite.
-- **`whereExists`/`whereNotExists`** — a cleaner EXISTS API without the unused table/column
-  parameters `whereExistsWithBuilder`/`whereNotExistsWithBuilder` never use. Both forms render
-  identically and the `*WithBuilder` forms remain available for wire parity with the golden corpus.
-- **`returning()`/`returningRaw()`/`clearReturning()`** on INSERT/UPDATE/DELETE. Postgres/SQLite
-  emit a trailing `RETURNING`; MSSQL emits an inline `OUTPUT INSERTED.…`/`OUTPUT DELETED.…`. MySQL
-  has no equivalent and throws a `ParserError` rather than silently dropping the requested columns.
-- **Upsert on INSERT** — `onConflictDoNothing()`, `onConflictDoUpdate()`, `onConflictDoUpdateRaw()`,
-  `clearUpsert()`. Postgres/SQLite emit `ON CONFLICT (...) DO NOTHING`/`DO UPDATE SET ...`; MySQL
-  emits `INSERT IGNORE`/`ON DUPLICATE KEY UPDATE` instead. MSSQL upsert (`MERGE`) is deferred to a
-  future release and throws a clear unsupported-feature error.
-- **Row locks on SELECT** — `forUpdate()`/`forShare()`, plus `forUpdateNowait`/
-  `forUpdateSkipLocked`/`forShareNowait`/`forShareSkipLocked` wait variants, and `clearRowLock()`.
-  Postgres/MySQL append a trailing `FOR UPDATE`/`FOR SHARE`; MSSQL has no such clause and gets an
-  equivalent `WITH (UPDLOCK, ROWLOCK)`/`WITH (HOLDLOCK, ROWLOCK)` table hint on every base table
-  instead. SQLite has no row-level locking and throws a `ParserError`.
-
-New public API: `RowLockMode`, `RowLockWait`, and `UpsertAction` enums, exported from
-`package:sqleasy/sqleasy.dart`.
-
-Nothing to migrate: every addition above is purely additive — no previously emitted SQL changes.
-
 ## 3.0.0
 
-Tracks the TypeScript `@deebeetech/sqleasy` **9.0.0** golden corpus (was pinned to 8.0.0). Mirrors
-the "M1 foundation fixes" milestone exactly.
+Tracks the TypeScript `@deebeetech/sqleasy` **9.0.0** golden corpus (was pinned to 8.0.0). 314
+golden cases (was 189). Mirrors the published TypeScript 9.0.0 surface: foundation fixes, Tier 1–3
+features, and first-class stored procedures/functions.
 
 **Breaking — the emitted SQL and some error paths change:**
 
-- **Consecutive predicates without an explicit combinator now auto-AND.** `.where().where()` and,
-  inside a JOIN, `.on().on()` (or a mix with `.onValue()`/`.onRaw()`/`.onGroup()`) used to render the
-  two predicates back to back with no operator between them — invalid SQL. They now render `AND`,
-  matching how HAVING already behaved.
-- **`limit(0)` and negative limits now throw** `ParserError(LimitOffset, 'LIMIT must be a positive
-  integer')` instead of silently emitting a limit-less/negative-limit query.
-- **An empty `whereGroup(() => {})` now throws** `ParserError(Where, 'WHERE group cannot be empty')`
-  instead of rendering as empty parentheses (`WHERE ()`), which no dialect accepts.
-- **`clearUpdate` now removes the UPDATE-owned FROM target**, not just the SET assignments — calling
-  it leaves `fromStates` empty, the same as never having called `updateTable`.
-- **New `clearDelete`** clears the DELETE target and resets the sticky `queryType` back to `select`,
-  mirroring `clearUpdate`/`clearInsert`. Calling any `select*` method now also clears a sticky
-  DELETE/UPDATE/INSERT `queryType` (it already did for INSERT).
-- **`clearHaving` now resets the `and()`/`or()` combinator target back to WHERE.** Previously, calling
-  `and()`/`or()` after `clearHaving()` could still append to the (now-cleared) HAVING list instead of
-  WHERE.
-- **`updateTable`/`deleteFrom` now win over a prior `fromTable`** for the mutation target, tracked
-  internally via a new `mutationTargetIndex`, instead of always rendering the first FROM entry.
-  `builder.fromTable('users', alias: 'u').updateTable('orders', alias: 'o')` now updates `orders`, not
-  `users`.
-- **`insertColumns`, `insertValues`, `whereInValues`, and `whereNotInValues` now copy their input
-  list** instead of holding a reference to the caller's list — mutating the list you passed in no
-  longer mutates the builder's state after the fact.
+- **Consecutive predicates without an explicit combinator now auto-AND.** `.where().where()` and
+  JOIN `.on().on()` render `AND`, matching HAVING.
+- **`limit(0)` and negative limits throw** `ParserError(LimitOffset, …)`.
+- **Empty `whereGroup(() => {})` throws** instead of emitting `WHERE ()`.
+- **`clearUpdate` removes the UPDATE-owned FROM target**; new **`clearDelete`**; sticky DELETE/
+  UPDATE/INSERT `queryType` clears on `select*`; **`clearHaving`** resets the combinator target.
+- **`updateTable`/`deleteFrom` win over a prior `fromTable`** via `mutationTargetIndex`.
+- **`insertColumns` / `insertValues` / `whereInValues` / `whereNotInValues` copy their lists.**
 
-Nothing to migrate for well-formed queries: every changed case above was either invalid SQL, a
-one-token gap the caller almost certainly meant to fill with `and()`, or an ambiguity the caller had
-no way to resolve before now.
+**New features:**
+
+- **HAVING parity with WHERE**, **`ILIKE`/`NOT ILIKE`**, cleaner **`whereExists`/`whereNotExists`**,
+  **`returning()` / MSSQL `OUTPUT`**, **upsert** (PG/SQLite `ON CONFLICT`, MySQL `ON DUPLICATE`/
+  `INSERT IGNORE`, MSSQL **`MERGE`**), and **row locks** (`FOR UPDATE`/`FOR SHARE` + wait variants;
+  MSSQL table hints).
+- **Stored procedures/functions** — `callProcedure`/`callFunction`, `procParam*` / OUT/INOUT,
+  dialect `CALL`/`SELECT`/`EXEC` emission (SQLite throws).
+- **Windows**, **CTE column lists**, **`INSERT…SELECT`**, **join-backed UPDATE/DELETE**, richer
+  JOIN ON (`onIn`/`onBetween`/`LIKE`), **`DISTINCT ON`**, **`NULLS FIRST/LAST`**, **`IS DISTINCT
+  FROM`**.
+- **JSON** / **full-text** / **LATERAL·APPLY** / **TVFs** / **GROUPING SETS·CUBE·ROLLUP** /
+  **`limitWithTies`** / **query hints**.
+
+Also: `QueryState`/`JoinOnState` exported; CI embed-verify + hardened `fetch_goldens --verify`;
+`goldens/README.md` and `CONTRIBUTING.md`.
 
 ## 2.0.0
 

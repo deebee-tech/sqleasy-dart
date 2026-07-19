@@ -626,7 +626,7 @@ something only the caller knows.
 
 ## Correctness across Flutter web and mobile
 
-Every query this package produces is verified against a shared golden corpus — 253 cases across all
+Every query this package produces is verified against a shared golden corpus — 314 cases across all
 four dialects — that both this package and the TypeScript original must reproduce **byte-for-byte**.
 That is not decoration; it defends against a real, silent trap.
 
