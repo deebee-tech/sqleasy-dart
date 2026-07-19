@@ -92,6 +92,21 @@ builder.clearAll();
 builder..distinct()..selectColumn('u', 'name')..fromTable('users', alias: 'u');
 // SELECT DISTINCT "u"."name" FROM "public"."users" AS "u";
 
+// DISTINCT ON (Postgres only)
+builder.clearAll();
+builder
+  ..distinctOn([(table: 'u', column: 'email')])
+  ..selectAll()
+  ..fromTable('users', alias: 'u');
+// SELECT DISTINCT ON ("u"."email") * FROM "public"."users" AS "u";
+
+// Window function
+builder.clearAll();
+builder
+  ..selectWindow('ROW_NUMBER()', (w) => w.partitionByColumn('u', 'role'), alias: 'rn')
+  ..fromTable('users', alias: 'u');
+// SELECT ROW_NUMBER() OVER (PARTITION BY "u"."role") AS "rn" FROM "public"."users" AS "u";
+
 // Raw expression
 builder.clearAll();
 builder..selectRaw('COUNT(*) AS total')..fromTable('users', alias: 'u');
@@ -163,6 +178,23 @@ builder
     ..or()
     ..where('u', 'role', WhereOperator.equals, 'moderator'));
 // ... WHERE "u"."active" = $1 AND ("u"."role" = $2 OR "u"."role" = $3);
+
+// Case-insensitive LIKE
+builder.clearAll();
+builder..selectAll()..fromTable('users', alias: 'u')..where('u', 'name', WhereOperator.ilike, '%ada%');
+// Postgres: WHERE "u"."name" ILIKE $1
+// MySQL/SQLite/MSSQL: WHERE LOWER(...) LIKE LOWER(?) — no native ILIKE on those dialects.
+
+// EXISTS / NOT EXISTS
+builder.clearAll();
+builder
+  ..selectAll()
+  ..fromTable('users', alias: 'u')
+  ..whereExists((sb) => sb
+    ..selectAll()
+    ..fromTable('orders', alias: 'o')
+    ..where('o', 'user_id', WhereOperator.equals, 1));
+// ... WHERE EXISTS (SELECT * FROM "public"."orders" AS "o" WHERE "o"."user_id" = $1);
 ```
 
 ### JOIN
@@ -194,6 +226,9 @@ builder
       ..on('u', 'tenant_id', JoinOperator.equals, 'o', 'tenant_id');
   }, alias: 'o');
 
+// Richer ON predicates: onIn/onNotIn/onBetween/onNotBetween, and JoinOperator.like/notLike
+// on on()/onValue() — same binding rules as WHERE.
+
 // Join to a sub-query
 builder.clearAll();
 builder
@@ -220,6 +255,9 @@ final builder = PostgresQuery().newBuilder()
 // INSERT INTO "public"."users" ("name", "email", "age") VALUES ($1, $2, $3);
 // params: [John, john@example.com, 30]
 
+// Row source from a SELECT instead of VALUES:
+// ..insertSelect((sb) => sb..selectColumn('o', 'id')..fromTable('orders', alias: 'o'))
+
 // Multi-row insert: call insertValues once per row.
 ```
 
@@ -245,16 +283,132 @@ final builder = PostgresQuery().newBuilder()
 // DELETE FROM "public"."users" AS "u" WHERE "u"."id" = $1;
 ```
 
+### RETURNING / OUTPUT
+
+`returning()`/`returningRaw()` work on INSERT, UPDATE, and DELETE. Postgres/SQLite emit a trailing
+`RETURNING`; MSSQL emits an inline `OUTPUT INSERTED.…`/`OUTPUT DELETED.…`. MySQL has no equivalent
+and throws a `ParserError` rather than silently dropping the requested columns.
+
+```dart
+final builder = PostgresQuery().newBuilder()
+  ..insertInto('users')
+  ..insertColumns(['name', 'email'])
+  ..insertValues(['John', 'john@example.com'])
+  ..returning(['id', 'created_at']);
+// INSERT INTO "public"."users" ("name", "email") VALUES ($1, $2) RETURNING "id", "created_at";
+
+// Raw form: ..returningRaw('id, LOWER(name) AS name_lower')
+// Undo: ..clearReturning()
+```
+
+### Upsert (ON CONFLICT)
+
+`onConflictDoNothing()`/`onConflictDoUpdate()`/`onConflictDoUpdateRaw()` add an INSERT conflict
+clause. Postgres/SQLite emit `ON CONFLICT (...) DO NOTHING`/`DO UPDATE SET ...`; MySQL emits
+`INSERT IGNORE`/`ON DUPLICATE KEY UPDATE` instead (the conflict-column list is ignored there — MySQL
+infers the conflicting key from the table's own constraints). MSSQL emits `MERGE INTO …` via the same
+`onConflict*` methods.
+
+```dart
+final builder = PostgresQuery().newBuilder()
+  ..insertInto('users')
+  ..insertColumns(['email', 'name'])
+  ..insertValues(['john@example.com', 'John'])
+  ..onConflictDoUpdate(['email'], [(column: 'name', value: 'John')]);
+// ... ON CONFLICT ("email") DO UPDATE SET "name" = $3;
+
+// Skip conflicting rows: ..onConflictDoNothing(['email'])
+// Raw SET expression:    ..onConflictDoUpdateRaw(['email'], 'hits = users.hits + 1')
+// Undo:                  ..clearUpsert()
+// MSSQL:                 MERGE INTO [dbo].[users] AS [target] USING (VALUES (...)) ...
+```
+
+### JSON operators
+
+Dialect-aware JSON path extraction and containment:
+
+```dart
+builder
+  ..selectJsonExtract('u', 'meta', 'email', JsonExtractMode.text, alias: 'email')
+  ..fromTable('users', alias: 'u')
+  ..whereJsonExtract('u', 'meta', 'email', JsonExtractMode.text, WhereOperator.equals, 'a@b.c')
+  ..whereJsonContains('u', 'meta', {'role': 'admin'});
+```
+
+### Full-text search
+
+```dart
+builder
+  ..fromTable('docs', alias: 'd')
+  ..whereMatch([(table: 'd', column: 'body')], 'hello world', FullTextMode.natural);
+```
+
+### LATERAL / APPLY and table functions
+
+```dart
+builder
+  ..fromTable('orders', alias: 'o')
+  ..joinCrossApply('x', (sub) => sub.selectAll().fromTable('line_items', alias: 'li'))
+  ..fromTableFunction('generate_series', 'g', [1, 10]);
+```
+
+### GROUPING SETS / CUBE / ROLLUP
+
+```dart
+builder
+  ..groupByColumn('o', 'region')
+  ..groupByRollup();
+```
+
+### FETCH FIRST … WITH TIES
+
+```dart
+builder
+  ..orderByColumn('o', 'total', OrderByDirection.descending)
+  ..limitWithTies(5);
+```
+
+### Query hints
+
+```dart
+builder.fromTable('users', alias: 'u').hintUseIndex('u', 'users_email_idx');
+builder.hintMssqlOption('RECOMPILE');
+builder.hintRaw('/*+ SeqScan(u) */');
+```
+
+### Row locks (FOR UPDATE / FOR SHARE)
+
+`forUpdate()`/`forShare()` lock a SELECT's result rows, with `Nowait`/`SkipLocked` wait variants.
+Postgres/MySQL append a trailing `FOR UPDATE`/`FOR SHARE`; MSSQL has no such clause and gets an
+equivalent `WITH (UPDLOCK, ROWLOCK)`/`WITH (HOLDLOCK, ROWLOCK)` table hint on every base table
+instead. SQLite has no row-level locking and throws a `ParserError`.
+
+```dart
+final builder = PostgresQuery().newBuilder()
+  ..selectAll()
+  ..fromTable('users', alias: 'u')
+  ..where('u', 'id', WhereOperator.equals, 1)
+  ..forUpdateSkipLocked();
+// ... WHERE "u"."id" = $1 FOR UPDATE SKIP LOCKED;
+
+// Also available: forUpdateNowait(), forShare(), forShareNowait(), forShareSkipLocked()
+// Undo: ..clearRowLock()
+```
+
 ### ORDER BY / LIMIT / OFFSET
 
 ```dart
 final builder = PostgresQuery().newBuilder()
   ..selectAll()
   ..fromTable('users', alias: 'u')
-  ..orderByColumn('u', 'name', OrderByDirection.ascending)
+  ..orderByColumn('u', 'name', OrderByDirection.ascending, NullsOrder.last)
   ..limit(10)
   ..offset(20);
 ```
+
+`orderByColumn()` accepts an optional fourth argument for `NullsOrder.first` / `NullsOrder.last`.
+Postgres and SQLite emit native `NULLS FIRST`/`NULLS LAST`; MySQL and MSSQL emulate it with a
+leading `CASE WHEN col IS NULL THEN … END` sort key.
 
 `limit()` is **pagination**: on MSSQL it renders as `OFFSET … ROWS FETCH NEXT … ROWS ONLY`, which
 T-SQL accepts only alongside an `ORDER BY` — so paginating without one throws rather than emitting
@@ -273,6 +427,23 @@ final builder = PostgresQuery().newBuilder()
   ..having('u', 'role', WhereOperator.notEquals, 'guest');
 ```
 
+HAVING has full parity with WHERE — `havingBetween`, `havingInValues`/`havingInWithBuilder`,
+`havingNotInValues`/`havingNotInWithBuilder`, `havingNull`/`havingNotNull`, `havingExists`/
+`havingNotExists`, `havingGroup`, and the `ilike`/`notIlike` operator all work exactly like their
+WHERE counterparts, and share the same AND/OR combinator rules.
+
+```dart
+builder.clearAll();
+builder
+  ..selectColumn('u', 'role')
+  ..selectRaw('COUNT(*) AS cnt')
+  ..fromTable('users', alias: 'u')
+  ..groupByColumn('u', 'role')
+  ..havingBetween('u', 'cnt', 5, 100)
+  ..and()
+  ..havingNotNull('u', 'role');
+```
+
 ### Common Table Expressions (CTEs)
 
 ```dart
@@ -286,7 +457,8 @@ final builder = PostgresQuery().newBuilder()
 // WITH "active_users" AS (SELECT * FROM "public"."users" AS "u" WHERE "u"."active" = $1)
 //   SELECT * FROM "active_users" AS "au";
 
-// Recursive: ..cteRecursive('hierarchy', (cb) { ... })
+// Recursive: ..cteRecursive('hierarchy', (cb) { ... }, ['id', 'parent_id'])
+// Optional explicit column list: ..cte('active_users', (cb) { ... }, ['id', 'name'])
 ```
 
 ### UNION / INTERSECT / EXCEPT
@@ -300,6 +472,54 @@ final builder = PostgresQuery().newBuilder()
     ..fromTable('customers', alias: 'c'));
 
 // Also available: unionAll(), intersect(), except()
+```
+
+### Stored procedures & functions (CALL / EXEC)
+
+`callProcedure()`/`callProcedureWithOwner()` invoke a stored procedure; `callFunction()`/
+`callFunctionWithOwner()` invoke a stored function as an expression. Postgres emits `CALL
+name(...)` for procedures and `SELECT name(...)`/`SELECT * FROM name(...)` for functions (scalar
+vs. set-returning, via `CallReturnIntent`); MySQL emits `CALL name(...)`/`SELECT name(...)` (it has
+no table-valued functions — `CallReturnIntent.resultSet` throws there); MSSQL emits `EXEC name
+...`, prepending `DECLARE`d local variables for OUT/INOUT parameters. SQLite has no stored
+procedures or functions at all and throws a `ParserError`.
+
+```dart
+final builder = PostgresQuery().newBuilder()
+  ..callProcedure('archive_user')
+  ..procParam(42);
+// CALL "public"."archive_user"($1);   params: [42]
+
+// A stored function as a scalar expression
+builder.clearAll();
+builder
+  ..callFunction('add_two')
+  ..procParam(1)
+  ..procParam(2);
+// SELECT "public"."add_two"($1, $2);
+
+// A set-returning / table-valued function
+builder.clearAll();
+builder
+  ..callFunction('users_over', CallReturnIntent.resultSet)
+  ..procParam(18);
+// SELECT * FROM "public"."users_over"($1);
+```
+
+`procParams()` appends several positional arguments at once; `procParamNamed()` adds a named
+argument (Postgres `name := value`, MSSQL `@name = value` — MySQL has no named-argument syntax and
+throws); `procParamRaw()` splices an argument verbatim. `procParamOut()`/`procParamInOut()` add
+procedure-only output parameters — refused on `callFunction`, since a function's result is its
+return expression, not an output slot:
+
+```dart
+final mssql = MssqlQuery().newBuilder()
+  ..callProcedure('archive_user')
+  ..procParam(42)
+  ..procParamOut('archived_count', 'INT');
+// DECLARE @archived_count INT; EXEC [dbo].[archive_user] 42, @archived_count = @archived_count OUTPUT;
+
+// Undo: ..clearCall()
 ```
 
 ## Multi-Builder (Batched Statements)
@@ -389,8 +609,8 @@ final query = PostgresQuery(rc);
 
 ### SQLEasy never caps your rows
 
-There is no automatic row limit. `selectAll().fromTable('users', 'u')` compiles to exactly that, on
-every dialect, and will happily return every row in the table. If you want a bound, say so —
+There is no automatic row limit. `selectAll().fromTable('users', alias: 'u')` compiles to exactly
+that, on every dialect, and will happily return every row in the table. If you want a bound, say so —
 `limit()` to paginate, or `top(n)` on SQL Server for an unordered cap.
 
 This is deliberate. A cap the builder applies on its own is a truncation the caller never wrote and
@@ -406,7 +626,7 @@ something only the caller knows.
 
 ## Correctness across Flutter web and mobile
 
-Every query this package produces is verified against a shared golden corpus — 189 cases across all
+Every query this package produces is verified against a shared golden corpus — 253 cases across all
 four dialects — that both this package and the TypeScript original must reproduce **byte-for-byte**.
 That is not decoration; it defends against a real, silent trap.
 
@@ -425,13 +645,31 @@ source, with nothing thrown and nothing logged: `5.0` binds as `@p0 tinyint` / `
 layer, and the test suite runs on **both** platforms — `dart test` (the VM) and `dart test -p chrome`
 (dart2js) — so the two can never diverge. See [`goldens/README.md`](goldens/README.md).
 
+## Null comparisons
+
+`.where(..., WhereOperator.equals, null)` and `.notEquals` rewrite to `IS NULL` / `IS NOT NULL`.
+Other operators (`>`, `<`, `LIKE`, …) keep binding `NULL` (SQL three-valued logic). The same rule
+applies to HAVING.
+
+## EXISTS unused table/column
+
+`whereExistsWithBuilder(table, column, …)` and `whereNotExistsWithBuilder` accept `table`/`column`
+for corpus wire parity with TypeScript; emit ignores them (only the subquery matters). Prefer the
+cleaner overloads without those parameters when you do not need wire parity.
+
 ## Development
+
+CI expects the same checks locally (Chrome/Chromium required for `-p chrome`):
 
 ```bash
 dart pub get
-dart analyze
+dart analyze --fatal-infos
+dart format --output=none --set-exit-if-changed .
+dart run tool/fetch_goldens.dart --verify
+dart run tool/verify_embed.dart
 dart test               # the Dart VM — Flutter mobile and desktop
 dart test -p chrome     # dart2js — Flutter web. Not redundant, not optional.
+dart run example/sqleasy_example.dart
 
 dart run tool/fetch_goldens.dart    # pull the pinned corpus from the TypeScript repo's tag
 dart run tool/embed_goldens.dart    # re-embed it for the dart2js test run

@@ -36,6 +36,10 @@ Object? decodeInputValue(Map<String, Object?> value) {
       return value['v'] as bool;
     case 'datetime':
       return DateTime.parse(value['v'] as String).toUtc();
+    case 'json':
+      // The corpus tags JSON blobs for documentation. The TypeScript driver's `toValue()` has no
+      // `json` arm, so the value is `undefined` and binds as NULL — which the golden records.
+      return null;
     default:
       throw StateError('corpus: unknown input value tag "$tag"');
   }

@@ -39,7 +39,8 @@ void main() {
 
   group('mssqlParameter with binary', () {
     test('mssqlParameterType declares Uint8List as varbinary(max)', () {
-      expect(mssqlParameterType(Uint8List.fromList([1, 2, 3])), 'varbinary(max)');
+      expect(
+          mssqlParameterType(Uint8List.fromList([1, 2, 3])), 'varbinary(max)');
     });
 
     test('mssqlParameterValue inlines Uint8List as a 0x hex literal', () {
@@ -49,10 +50,8 @@ void main() {
 
     test('MssqlQuery inlines Buffer-equivalent bytes as varbinary hex', () {
       final b = MssqlQuery().newBuilder();
-      b
-          .selectAll()
-          .fromTable('t', alias: 't')
-          .where('t', 'blob', WhereOperator.equals, Uint8List.fromList([1, 2, 3]));
+      b.selectAll().fromTable('t', alias: 't').where(
+          't', 'blob', WhereOperator.equals, Uint8List.fromList([1, 2, 3]));
 
       final sql = b.parse();
       expect(sql, contains('@p0 varbinary(max)'));

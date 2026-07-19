@@ -20,6 +20,8 @@ jobs:
 
       - run: dart analyze --fatal-infos
       - run: dart format --output=none --set-exit-if-changed .
+      - run: dart run tool/fetch_goldens.dart --verify
+      - run: dart run tool/verify_embed.dart
 
       # The Dart VM — what Flutter mobile and desktop compile to.
       - run: dart test
@@ -36,6 +38,8 @@ jobs:
       # This job has already caught one such bug in lib/src/values/sql_value.dart. Do not remove it.
       - run: dart test -p chrome
 
+      - run: dart run example/sqleasy_example.dart
+
   # Verifies this package still agrees, byte-for-byte, with the TypeScript implementation it was
   # ported from — on both platforms. See goldens/README.md.
   conformance:
@@ -48,5 +52,6 @@ jobs:
           sdk: stable
       - run: dart pub get
       - run: dart run tool/fetch_goldens.dart --verify
+      - run: dart run tool/verify_embed.dart
       - run: dart test test/conformance
       - run: dart test test/conformance -p chrome

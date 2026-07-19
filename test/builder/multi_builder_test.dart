@@ -63,5 +63,26 @@ void main() {
       // MSSQL inlines into sp_executesql, so every statement binds no params.
       expect(stmts.every((s) => s.params.isEmpty), isTrue);
     });
+
+    test('covers MySQL and SQLite placeholder styles across three statements',
+        () {
+      for (final multi in [
+        MysqlQuery().newMultiBuilder(),
+        SqliteQuery().newMultiBuilder(),
+      ]) {
+        fill(multi);
+        multi
+            .addBuilder('del')
+            .deleteFrom('users', alias: 'u')
+            .where('u', 'id', WhereOperator.equals, 9);
+
+        final stmts = multi.preparedStatements();
+        expect(stmts, hasLength(3));
+        expect(stmts[0].params, equals(['Ada', 36]));
+        expect(stmts[1].params, equals([100, 1]));
+        expect(stmts[2].params, equals([9]));
+        expect(stmts.every((s) => s.sql.contains('?')), isTrue);
+      }
+    });
   });
 }

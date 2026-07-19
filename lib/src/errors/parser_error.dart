@@ -13,6 +13,7 @@ enum ParserArea {
   insert('Insert'),
   update('Update'),
   delete('Delete'),
+  call('Call'),
   general('General');
 
   const ParserArea(this.value);

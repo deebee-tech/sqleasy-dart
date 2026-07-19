@@ -14,7 +14,7 @@ import 'dart:io';
 /// A copy is vendored into this repo so the tests run offline and so that a change to the contract
 /// shows up as a reviewable diff rather than a silent behaviour shift under CI.
 ///
-const corpusVersion = '7.0.0';
+const corpusVersion = '13.0.0';
 
 const _repo = 'deebee-tech/sqleasy';
 const _path = 'goldens/corpus.json';
@@ -33,13 +33,24 @@ Future<void> main(List<String> args) async {
   try {
     remote = await _get(_url);
   } on Object catch (error) {
-    // A tag that does not exist yet is the normal state while the contract is still being cut.
-    // Do not fail the build on it — fail only on a real mismatch.
     stderr.writeln('Could not fetch the corpus: $error');
+    if (verify) {
+      // Soft-fail only when the pin is not cut yet *and* a vendored copy is present for offline CI.
+      if (local.existsSync()) {
+        stderr.writeln(
+          'Tag v$corpusVersion is not fetchable yet; using vendored goldens/corpus.json.',
+        );
+        exit(0);
+      }
+      stderr.writeln(
+        'Verify failed: could not fetch v$corpusVersion and goldens/corpus.json is missing.',
+      );
+      exit(1);
+    }
     stderr.writeln(
       'If v$corpusVersion has not been tagged yet, the vendored copy in goldens/ is authoritative.',
     );
-    exit(verify ? 0 : 1);
+    exit(1);
   }
 
   if (!local.existsSync()) {

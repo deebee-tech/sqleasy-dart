@@ -31,6 +31,24 @@ SqlHelper defaultCte(
 
     sqlHelper.addSqlSnippet(
         quoteIdentifier(cteState.name, config.identifierDelimiters));
+
+    if (cteState.columns.isNotEmpty) {
+      sqlHelper.addSqlSnippet(' (');
+      for (var columnIndex = 0;
+          columnIndex < cteState.columns.length;
+          columnIndex++) {
+        sqlHelper.addSqlSnippet(
+          quoteIdentifier(
+              cteState.columns[columnIndex], config.identifierDelimiters),
+        );
+
+        if (columnIndex < cteState.columns.length - 1) {
+          sqlHelper.addSqlSnippet(', ');
+        }
+      }
+      sqlHelper.addSqlSnippet(')');
+    }
+
     sqlHelper.addSqlSnippet(' AS (');
 
     if (cteState.builderType == BuilderType.cteRaw) {

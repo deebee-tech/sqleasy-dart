@@ -20,8 +20,12 @@ export 'src/builder/query_builder.dart'
         TableRef,
         JoinRef,
         OrderByRef,
+        DistinctOnRef,
         GroupByRef,
+        GroupBySetRef,
+        MatchColumnRef,
         SetRef;
+export 'src/builder/window_builder.dart' show WindowBuilder;
 export 'src/configuration.dart'
     show ConfigurationDelimiters, Dialect, RuntimeConfiguration;
 export 'src/dialects.dart'
@@ -32,7 +36,19 @@ export 'src/enums.dart'
         JoinType,
         JoinOperator,
         OrderByDirection,
+        NullsOrder,
+        FrameBoundType,
+        FrameUnit,
         MultiBuilderTransactionState,
-        DatabaseType;
+        DatabaseType,
+        RowLockMode,
+        RowLockWait,
+        UpsertAction,
+        JsonExtractMode,
+        FullTextMode,
+        CallKind,
+        CallParamDirection,
+        CallReturnIntent;
 export 'src/errors/parser_error.dart' show ParserArea, ParserError;
 export 'src/parser/to_sql.dart' show PreparedSql;
+export 'src/state.dart' show QueryState, JoinOnState;

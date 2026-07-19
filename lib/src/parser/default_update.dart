@@ -4,47 +4,61 @@ import '../errors/parser_error.dart';
 import '../identifier.dart';
 import '../sql_helper.dart';
 import '../state.dart';
+import 'default_join.dart';
+import 'default_mutation_join.dart';
+import 'default_returning.dart';
+import 'mutation_target.dart';
+import 'to_sql.dart';
 
-SqlHelper defaultUpdate(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultUpdate(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
-
-  if (state.fromStates.isEmpty) {
-    throw ParserError(ParserArea.update, 'UPDATE requires a table');
-  }
 
   if (state.updateStates.isEmpty) {
     throw ParserError(
         ParserArea.update, 'UPDATE requires at least one SET column');
   }
 
+  assertMutationJoinsSupported(state, config, ParserArea.update);
+
+  final hasJoins = state.joinStates.isNotEmpty;
+
   final delim = config.identifierDelimiters;
   String quote(String s) => quoteIdentifier(s, delim);
 
-  final fromState = state.fromStates[0];
+  final fromState = resolveMutationTarget(
+      state, ParserArea.update, 'UPDATE requires a table');
   final owner = fromState.owner ?? '';
   final alias = fromState.alias ?? '';
 
   if (owner.isNotEmpty && config.databaseType == DatabaseType.mysql) {
-    throw ParserError(
-        ParserArea.update, 'MySQL does not support table owners');
+    throw ParserError(ParserArea.update, 'MySQL does not support table owners');
   }
 
   final qualified = (owner.isNotEmpty ? '${quote(owner)}.' : '') +
       quote(fromState.tableName ?? '');
-  // T-SQL has no `UPDATE table AS alias` — the alias must come from a FROM clause:
-  // `UPDATE [alias] SET ... FROM [tbl] AS [alias]`.
-  final mssqlAliased =
-      alias.isNotEmpty && config.databaseType == DatabaseType.mssql;
+  final mssqlAliased = config.databaseType == DatabaseType.mssql &&
+      (alias.isNotEmpty || hasJoins);
 
   sqlHelper.addSqlSnippet('UPDATE ');
 
   if (mssqlAliased) {
-    sqlHelper.addSqlSnippet(quote(alias));
+    sqlHelper.addSqlSnippet(alias.isNotEmpty ? quote(alias) : qualified);
   } else {
     sqlHelper.addSqlSnippet(qualified);
     if (alias.isNotEmpty) {
       sqlHelper.addSqlSnippet(' AS ');
       sqlHelper.addSqlSnippet(quote(alias));
+    }
+
+    if (hasJoins && config.databaseType == DatabaseType.mysql) {
+      final join = defaultJoin(state, config, mode, options);
+      sqlHelper.addSqlSnippet(' ');
+      sqlHelper.addSqlSnippetWithValues(join.getSql(), join.getValues());
     }
   }
 
@@ -67,11 +81,32 @@ SqlHelper defaultUpdate(QueryState state, Dialect config, ParserMode mode) {
     }
   }
 
+  if (state.returningState != null &&
+      config.databaseType == DatabaseType.mssql) {
+    emitMssqlOutputClause(sqlHelper, config, state.returningState!, 'INSERTED',
+        ParserArea.update);
+  }
+
   if (mssqlAliased) {
     sqlHelper.addSqlSnippet(' FROM ');
     sqlHelper.addSqlSnippet(qualified);
-    sqlHelper.addSqlSnippet(' AS ');
-    sqlHelper.addSqlSnippet(quote(alias));
+    if (alias.isNotEmpty) {
+      sqlHelper.addSqlSnippet(' AS ');
+      sqlHelper.addSqlSnippet(quote(alias));
+    }
+
+    if (hasJoins) {
+      final join = defaultJoin(state, config, mode, options);
+      sqlHelper.addSqlSnippet(' ');
+      sqlHelper.addSqlSnippetWithValues(join.getSql(), join.getValues());
+    }
+  }
+
+  if (hasJoins && config.databaseType == DatabaseType.postgres) {
+    final from = renderPostgresMutationFrom(
+        config, state, mode, options, ParserArea.update);
+    sqlHelper.addSqlSnippet(' FROM ');
+    sqlHelper.addSqlSnippetWithValues(from.getSql(), from.getValues());
   }
 
   return sqlHelper;

@@ -4,8 +4,17 @@ import '../errors/parser_error.dart';
 import '../identifier.dart';
 import '../sql_helper.dart';
 import '../state.dart';
+import 'default_returning.dart';
+import 'default_upsert.dart';
+import 'default_merge.dart';
+import 'to_sql.dart';
 
-SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
+SqlHelper defaultInsert(
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
   final sqlHelper = SqlHelper(mode);
 
   final insertState = state.insertState;
@@ -18,11 +27,21 @@ SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
     return sqlHelper;
   }
 
+  if (state.upsertState != null && config.databaseType == DatabaseType.mssql) {
+    return emitMssqlMergeInsert(state, config, mode, options);
+  }
+
   if ((insertState.tableName ?? '').isEmpty) {
     throw ParserError(ParserArea.insert, 'INSERT requires a table');
   }
 
-  sqlHelper.addSqlSnippet('INSERT INTO ');
+  sqlHelper.addSqlSnippet('INSERT ');
+
+  if (isMysqlInsertIgnore(state.upsertState, config)) {
+    sqlHelper.addSqlSnippet('IGNORE ');
+  }
+
+  sqlHelper.addSqlSnippet('INTO ');
 
   if ((insertState.owner ?? '').isNotEmpty) {
     if (config.databaseType == DatabaseType.mysql) {
@@ -49,6 +68,35 @@ SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
       }
     }
     sqlHelper.addSqlSnippet(')');
+  }
+
+  if (state.returningState != null &&
+      config.databaseType == DatabaseType.mssql) {
+    emitMssqlOutputClause(sqlHelper, config, state.returningState!, 'INSERTED',
+        ParserArea.insert);
+  }
+
+  final selectSubquery = insertState.selectSubquery;
+  if (selectSubquery != null) {
+    if (insertState.values.isNotEmpty) {
+      throw ParserError(
+        ParserArea.insert,
+        'INSERT cannot combine a SELECT source with VALUES rows',
+      );
+    }
+
+    sqlHelper.addSqlSnippet(' ');
+
+    final subHelper = defaultToSql(selectSubquery, config, mode, options);
+    sqlHelper.addSqlSnippetWithValues(
+        subHelper.getSql(), subHelper.getValues());
+
+    if (state.upsertState != null) {
+      emitUpsertClause(
+          sqlHelper, config, state.upsertState!, ParserArea.insert);
+    }
+
+    return sqlHelper;
   }
 
   if (insertState.values.isEmpty) {
@@ -85,6 +133,10 @@ SqlHelper defaultInsert(QueryState state, Dialect config, ParserMode mode) {
     if (r < insertState.values.length - 1) {
       sqlHelper.addSqlSnippet(', ');
     }
+  }
+
+  if (state.upsertState != null) {
+    emitUpsertClause(sqlHelper, config, state.upsertState!, ParserArea.insert);
   }
 
   return sqlHelper;

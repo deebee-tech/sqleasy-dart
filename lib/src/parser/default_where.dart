@@ -4,7 +4,38 @@ import '../errors/parser_error.dart';
 import '../identifier.dart';
 import '../sql_helper.dart';
 import '../state.dart';
+import 'comparison_operator.dart';
+import 'default_json_predicate.dart';
 import 'to_sql.dart';
+
+const _wherePredicateTypes = {
+  BuilderType.where,
+  BuilderType.whereRaw,
+  BuilderType.whereBetween,
+  BuilderType.whereExistsBuilder,
+  BuilderType.whereInBuilder,
+  BuilderType.whereInValues,
+  BuilderType.whereNotExistsBuilder,
+  BuilderType.whereNotInBuilder,
+  BuilderType.whereNotInValues,
+  BuilderType.whereNotNull,
+  BuilderType.whereNull,
+  BuilderType.whereJsonExtract,
+  BuilderType.whereJsonContains,
+  BuilderType.whereFullText,
+};
+
+bool _isWherePredicate(WhereState state) =>
+    _wherePredicateTypes.contains(state.builderType);
+
+/// True when the prior token ends an expression that can be AND-joined to the next.
+bool _endsWhereExpression(WhereState state) =>
+    _isWherePredicate(state) || state.builderType == BuilderType.whereGroupEnd;
+
+/// True when the current token starts an expression that can follow an auto-AND.
+bool _startsWhereExpression(WhereState state) =>
+    _isWherePredicate(state) ||
+    state.builderType == BuilderType.whereGroupBegin;
 
 SqlHelper defaultWhere(
   QueryState state,
@@ -86,6 +117,14 @@ SqlHelper defaultWhere(
       continue;
     }
 
+    // Consecutive predicates / groups without an explicit AND/OR are joined with AND.
+    if (i > 0 &&
+        prev != null &&
+        _endsWhereExpression(prev) &&
+        _startsWhereExpression(cur)) {
+      sqlHelper.addSqlSnippet('AND ');
+    }
+
     if (cur.builderType == BuilderType.whereGroupBegin) {
       sqlHelper.addSqlSnippet('(');
       continue;
@@ -106,66 +145,31 @@ SqlHelper defaultWhere(
     // A grouped sub-expression: render the sub-builder's predicates inside the ( ) that the
     // surrounding WhereGroupBegin/End emit, carrying its bound values up in order.
     if (cur.builderType == BuilderType.whereGroupBuilder) {
-      if (cur.subquery != null) {
-        final subHelper = defaultWhere(cur.subquery!, config, mode);
-        var inner = subHelper.getSql();
-        if (inner.startsWith('WHERE ')) {
-          inner = inner.substring('WHERE '.length);
-        }
-        sqlHelper.addSqlSnippetWithValues(inner, subHelper.getValues());
+      if (cur.subquery == null || cur.subquery!.whereStates.isEmpty) {
+        throw ParserError(ParserArea.where, 'WHERE group cannot be empty');
       }
+      final subHelper = defaultWhere(cur.subquery!, config, mode);
+      var inner = subHelper.getSql();
+      if (inner.startsWith('WHERE ')) {
+        inner = inner.substring('WHERE '.length);
+      }
+      if (inner.trim().isEmpty) {
+        throw ParserError(ParserArea.where, 'WHERE group cannot be empty');
+      }
+      sqlHelper.addSqlSnippetWithValues(inner, subHelper.getValues());
       spaceAfter();
       continue;
     }
 
     if (cur.builderType == BuilderType.where) {
-      sqlHelper.addSqlSnippet(
-          quoteIdentifier(cur.tableNameOrAlias, config.identifierDelimiters));
-      sqlHelper.addSqlSnippet('.');
-      sqlHelper.addSqlSnippet(
-          quoteIdentifier(cur.columnName, config.identifierDelimiters));
-      sqlHelper.addSqlSnippet(' ');
+      final columnSql =
+          '${quoteIdentifier(cur.tableNameOrAlias, config.identifierDelimiters)}.'
+          '${quoteIdentifier(cur.columnName, config.identifierDelimiters)}';
 
       final value = cur.values.isNotEmpty ? cur.values[0] : null;
 
-      // `col = NULL` is never true under SQL three-valued logic. Emit IS NULL / IS NOT NULL
-      // so callers who pass null get a predicate that can match rows.
-      if ((cur.whereOperator == WhereOperator.equals ||
-              cur.whereOperator == WhereOperator.notEquals) &&
-          value == null) {
-        sqlHelper.addSqlSnippet(
-          cur.whereOperator == WhereOperator.equals ? 'IS NULL' : 'IS NOT NULL',
-        );
-        spaceAfter();
-        continue;
-      }
-
-      switch (cur.whereOperator) {
-        case WhereOperator.equals:
-          sqlHelper.addSqlSnippet('=');
-        case WhereOperator.notEquals:
-          sqlHelper.addSqlSnippet('<>');
-        case WhereOperator.greaterThan:
-          sqlHelper.addSqlSnippet('>');
-        case WhereOperator.greaterThanOrEquals:
-          sqlHelper.addSqlSnippet('>=');
-        case WhereOperator.lessThan:
-          sqlHelper.addSqlSnippet('<');
-        case WhereOperator.lessThanOrEquals:
-          sqlHelper.addSqlSnippet('<=');
-        case WhereOperator.like:
-          sqlHelper.addSqlSnippet('LIKE');
-        case WhereOperator.notLike:
-          sqlHelper.addSqlSnippet('NOT LIKE');
-        default:
-          throw ParserError(
-            ParserArea.where,
-            'Unsupported WHERE operator: ${cur.whereOperator.wire}',
-          );
-      }
-
-      sqlHelper.addSqlSnippet(' ');
-      sqlHelper.addDynamicValue(value);
+      emitComparisonPredicate(sqlHelper, config, columnSql, cur.whereOperator,
+          value, ParserArea.where);
       spaceAfter();
       continue;
     }
@@ -305,6 +309,49 @@ SqlHelper defaultWhere(
       sqlHelper.addSqlSnippet(
           quoteIdentifier(cur.columnName, config.identifierDelimiters));
       sqlHelper.addSqlSnippet(' IS NULL');
+      spaceAfter();
+      continue;
+    }
+
+    if (cur.builderType == BuilderType.whereJsonExtract) {
+      emitJsonExtractPredicate(
+        sqlHelper,
+        config,
+        mode,
+        tableNameOrAlias: cur.tableNameOrAlias,
+        columnName: cur.columnName,
+        jsonPath: cur.jsonPath,
+        jsonExtractMode: cur.jsonExtractMode,
+        whereOperator: cur.whereOperator,
+        values: cur.values,
+        area: ParserArea.where,
+      );
+      spaceAfter();
+      continue;
+    }
+
+    if (cur.builderType == BuilderType.whereJsonContains) {
+      emitJsonContainsPredicate(
+        sqlHelper,
+        config,
+        tableNameOrAlias: cur.tableNameOrAlias,
+        columnName: cur.columnName,
+        values: cur.values,
+        area: ParserArea.where,
+      );
+      spaceAfter();
+      continue;
+    }
+
+    if (cur.builderType == BuilderType.whereFullText) {
+      emitFullTextMatchPredicate(
+        sqlHelper,
+        config,
+        cur.fullTextColumns ?? [],
+        cur.fullTextMode ?? FullTextMode.natural,
+        cur.values.isNotEmpty ? cur.values[0] : null,
+        ParserArea.where,
+      );
       spaceAfter();
       continue;
     }

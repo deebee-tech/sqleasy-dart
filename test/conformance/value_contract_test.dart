@@ -138,6 +138,14 @@ List<Map<String, Object?>>? _flatScalarValues(GoldenCase c) {
         op.containsKey('builders')) {
       return null;
     }
+    // On MSSQL, `procParamInOut` emits its `DECLARE @name TYPE = value` *before* the
+    // EXEC/positional args — so if it is not the first value-bearing op, the emitted parameter
+    // order no longer matches declaration order. Reordering it correctly is the parser's job
+    // (verified by the full conformance suite); this whitebox helper only handles simple
+    // sequential emission.
+    if (op['op'] == 'procParamInOut') {
+      return null;
+    }
     for (final key in const ['value', 'from', 'to']) {
       final v = op[key];
       if (v is Map<String, Object?>) out.add(v);

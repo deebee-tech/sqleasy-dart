@@ -8,6 +8,7 @@ import '../sql_helper.dart';
 import '../state.dart';
 import '../values/mssql_parameter.dart';
 import '../values/sql_value.dart';
+import 'default_call.dart';
 import 'default_cte.dart';
 import 'default_delete.dart';
 import 'default_from.dart';
@@ -16,11 +17,15 @@ import 'default_having.dart';
 import 'default_insert.dart';
 import 'default_join.dart';
 import 'default_limit_offset.dart';
+import 'default_mutation_join.dart';
 import 'default_order_by.dart';
+import 'default_returning.dart';
+import 'default_row_lock.dart';
 import 'default_select.dart';
 import 'default_union.dart';
 import 'default_update.dart';
 import 'default_where.dart';
+import 'default_hint.dart';
 
 /// A prepared statement and the ordered values bound to its placeholders — ready to hand straight to
 /// a driver as `query(sql, params)`. For dialects that inline values into a self-contained statement
@@ -43,6 +48,42 @@ class ToSqlOptions {
   final BeforeSelectColumns? beforeSelectColumns;
 }
 
+void _emitMutationWhere(
+  SqlHelper sqlHelper,
+  QueryState state,
+  Dialect config,
+  ParserMode mode, [
+  ToSqlOptions? options,
+]) {
+  final joinPredicate = state.joinStates.isNotEmpty &&
+          config.databaseType == DatabaseType.postgres
+      ? buildPostgresMutationJoinPredicate(config, state, mode)
+      : null;
+
+  if (joinPredicate == null || joinPredicate.getSql().isEmpty) {
+    if (state.whereStates.isNotEmpty) {
+      final where = defaultWhere(state, config, mode, options);
+      sqlHelper.addSqlSnippet(' ');
+      sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
+    }
+    return;
+  }
+
+  sqlHelper.addSqlSnippet(' WHERE ');
+  sqlHelper.addSqlSnippetWithValues(
+      joinPredicate.getSql(), joinPredicate.getValues());
+
+  if (state.whereStates.isNotEmpty) {
+    final where = defaultWhere(state, config, mode, options);
+    var whereSql = where.getSql();
+    if (whereSql.startsWith('WHERE ')) {
+      whereSql = whereSql.substring('WHERE '.length);
+    }
+    sqlHelper.addSqlSnippet(' AND ');
+    sqlHelper.addSqlSnippetWithValues(whereSql, where.getValues());
+  }
+}
+
 /// Renders a [QueryState] to SQL by walking its clauses in order. Pure and dialect-driven. Used for
 /// the outer statement and, recursively, for every nested subquery.
 SqlHelper defaultToSql(
@@ -62,9 +103,53 @@ SqlHelper defaultToSql(
     sqlHelper.addSqlSnippetWithValues(cte.getSql(), cte.getValues());
   }
 
+  if (state.rowLock != null && state.queryType != QueryType.select) {
+    throw ParserError(
+        ParserArea.general, 'FOR UPDATE/FOR SHARE requires a SELECT query');
+  }
+
+  if (state.upsertState != null && state.queryType != QueryType.insert) {
+    throw ParserError(
+        ParserArea.insert, 'Upsert (ON CONFLICT) requires INSERT');
+  }
+
+  if (state.callState != null && state.queryType != QueryType.call) {
+    throw ParserError(ParserArea.call,
+        'Procedure/function call state requires queryType Call');
+  }
+
+  if (state.queryType == QueryType.call) {
+    if (state.cteStates.isNotEmpty) {
+      throw ParserError(ParserArea.call,
+          'A CTE cannot be combined with a procedure/function call');
+    }
+
+    if (state.returningState != null) {
+      throw ParserError(ParserArea.call,
+          'RETURNING/OUTPUT cannot be combined with a procedure/function call');
+    }
+
+    final call = defaultCall(state, config, mode);
+    sqlHelper.addSqlSnippetWithValues(call.getSql(), call.getValues());
+
+    if (!state.isInnerStatement) {
+      sqlHelper.addSqlSnippet(';');
+    }
+    return sqlHelper;
+  }
+
   if (state.queryType == QueryType.insert) {
-    final insert = defaultInsert(state, config, mode);
+    final insert = defaultInsert(state, config, mode, options);
     sqlHelper.addSqlSnippetWithValues(insert.getSql(), insert.getValues());
+
+    // PG/SQLite's RETURNING is trailing; MSSQL's OUTPUT was already emitted inline by
+    // `defaultInsert` (before VALUES), and MySQL has no equivalent (`defaultReturning` throws).
+    if (state.returningState != null &&
+        config.databaseType != DatabaseType.mssql) {
+      emitTrailingReturningClause(
+          sqlHelper, config, state.returningState!, ParserArea.insert);
+    }
+
     if (!state.isInnerStatement) {
       sqlHelper.addSqlSnippet(';');
     }
@@ -72,13 +157,17 @@ SqlHelper defaultToSql(
   }
 
   if (state.queryType == QueryType.update) {
-    final update = defaultUpdate(state, config, mode);
+    final update = defaultUpdate(state, config, mode, options);
     sqlHelper.addSqlSnippetWithValues(update.getSql(), update.getValues());
 
-    if (state.whereStates.isNotEmpty) {
-      final where = defaultWhere(state, config, mode, options);
-      sqlHelper.addSqlSnippet(' ');
-      sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
+    if (state.whereStates.isNotEmpty || state.joinStates.isNotEmpty) {
+      _emitMutationWhere(sqlHelper, state, config, mode, options);
+    }
+
+    if (state.returningState != null &&
+        config.databaseType != DatabaseType.mssql) {
+      emitTrailingReturningClause(
+          sqlHelper, config, state.returningState!, ParserArea.update);
     }
 
     if (!state.isInnerStatement) {
@@ -88,19 +177,28 @@ SqlHelper defaultToSql(
   }
 
   if (state.queryType == QueryType.delete) {
-    final del = defaultDelete(state, config, mode);
+    final del = defaultDelete(state, config, mode, options);
     sqlHelper.addSqlSnippetWithValues(del.getSql(), del.getValues());
 
-    if (state.whereStates.isNotEmpty) {
-      final where = defaultWhere(state, config, mode, options);
-      sqlHelper.addSqlSnippet(' ');
-      sqlHelper.addSqlSnippetWithValues(where.getSql(), where.getValues());
+    if (state.whereStates.isNotEmpty || state.joinStates.isNotEmpty) {
+      _emitMutationWhere(sqlHelper, state, config, mode, options);
+    }
+
+    if (state.returningState != null &&
+        config.databaseType != DatabaseType.mssql) {
+      emitTrailingReturningClause(
+          sqlHelper, config, state.returningState!, ParserArea.delete);
     }
 
     if (!state.isInnerStatement) {
       sqlHelper.addSqlSnippet(';');
     }
     return sqlHelper;
+  }
+
+  if (state.returningState != null) {
+    throw ParserError(ParserArea.general,
+        'RETURNING/OUTPUT requires INSERT, UPDATE, or DELETE');
   }
 
   final sel = defaultSelect(state, config, mode, options);
@@ -146,12 +244,28 @@ SqlHelper defaultToSql(
     sqlHelper.addSqlSnippetWithValues(orderBy.getSql(), orderBy.getValues());
   }
 
-  if (state.limit > 0 || state.offset > 0) {
+  if (state.limit > 0 || state.offset > 0 || state.limitWithTies) {
     final limitOffset = defaultLimitOffset(state, config, mode);
     sqlHelper.addSqlSnippet(' ');
     sqlHelper.addSqlSnippetWithValues(
         limitOffset.getSql(), limitOffset.getValues());
   }
+
+  if (state.limitWithTies &&
+      config.databaseType == DatabaseType.mssql &&
+      state.limit <= 0) {
+    throw ParserError(
+        ParserArea.limitOffset, 'limitWithTies requires a positive limit');
+  }
+
+  // Trailing `FOR UPDATE`/`FOR SHARE` (PG/MySQL). MSSQL's equivalent is a `WITH (...)` hint
+  // already emitted on each FROM table by `defaultFrom`; SQLite has no row locking and throws.
+  if (state.rowLock != null) {
+    emitTrailingRowLockClause(sqlHelper, config, state.rowLock!);
+  }
+
+  validateHints(state, config, ParserArea.general);
+  emitTrailingHints(sqlHelper, state, config);
 
   if (!state.isInnerStatement) {
     sqlHelper.addSqlSnippet(';');

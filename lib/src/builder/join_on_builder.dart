@@ -47,6 +47,48 @@ class JoinOnBuilder {
     return this;
   }
 
+  /// `ON column IN (values)`.
+  JoinOnBuilder onIn(String alias, String column, List<Object?> values) {
+    _states.add(JoinOnState()
+      ..joinOnOperator = JoinOnOperator.inValues
+      ..aliasLeft = alias
+      ..columnLeft = column
+      ..valuesRight = List.of(values));
+    return this;
+  }
+
+  /// `ON column NOT IN (values)`.
+  JoinOnBuilder onNotIn(String alias, String column, List<Object?> values) {
+    _states.add(JoinOnState()
+      ..joinOnOperator = JoinOnOperator.notInValues
+      ..aliasLeft = alias
+      ..columnLeft = column
+      ..valuesRight = List.of(values));
+    return this;
+  }
+
+  /// `ON column BETWEEN value1 AND value2`.
+  JoinOnBuilder onBetween(
+      String alias, String column, Object? value1, Object? value2) {
+    _states.add(JoinOnState()
+      ..joinOnOperator = JoinOnOperator.between
+      ..aliasLeft = alias
+      ..columnLeft = column
+      ..valuesRight = [value1, value2]);
+    return this;
+  }
+
+  /// `ON column NOT BETWEEN value1 AND value2`.
+  JoinOnBuilder onNotBetween(
+      String alias, String column, Object? value1, Object? value2) {
+    _states.add(JoinOnState()
+      ..joinOnOperator = JoinOnOperator.notBetween
+      ..aliasLeft = alias
+      ..columnLeft = column
+      ..valuesRight = [value1, value2]);
+    return this;
+  }
+
   /// A raw ON fragment, emitted verbatim.
   JoinOnBuilder onRaw(String raw) {
     _states.add(JoinOnState()
@@ -62,8 +104,6 @@ class JoinOnBuilder {
     final child = _child();
     builder(child);
 
-    // Splice the group's own conditions between the delimiters. Without this the child builder is
-    // populated and thrown away — the group renders as `()` and any onValue inside is never bound.
     _states.addAll(child.states());
 
     _states.add(JoinOnState()..joinOnOperator = JoinOnOperator.groupEnd);

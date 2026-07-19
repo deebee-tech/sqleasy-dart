@@ -44,4 +44,16 @@ void main() {
   print(insert
       .parsePrepared()
       .sql); // INSERT INTO "public"."users" ("name", "age") VALUES ($1, $2);
+
+  // Stored procedures/functions are their own statement family: `callProcedure`/`callFunction`
+  // plus `procParam*` for arguments. Postgres emits CALL; MSSQL prepends DECLAREd variables for
+  // OUT/INOUT parameters; SQLite has no stored procedures/functions at all and throws.
+  final call = query.newBuilder()
+    ..callProcedure('archive_user')
+    ..procParam(42)
+    ..procParamOut('archived_count');
+
+  print(call
+      .parsePrepared()
+      .sql); // CALL "public"."archive_user"($1, archived_count := $2);
 }
