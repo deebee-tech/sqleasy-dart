@@ -50,5 +50,6 @@ export 'src/enums.dart'
         CallParamDirection,
         CallReturnIntent;
 export 'src/errors/parser_error.dart' show ParserArea, ParserError;
+export 'src/expression/scalar.dart' show Fn;
 export 'src/parser/to_sql.dart' show PreparedSql;
 export 'src/state.dart' show QueryState, JoinOnState;

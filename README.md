@@ -669,6 +669,25 @@ applies to HAVING.
 for corpus wire parity with TypeScript; emit ignores them (only the subquery matters). Prefer the
 cleaner overloads without those parameters when you do not need wire parity.
 
+## Scalar expression helpers (`Fn`)
+
+`Fn` is a set of pure, per-dialect emit helpers for scalar expressions — the dialect-correctness
+knowledge for a few common functions, so an expression compiler can build normalized SQL without
+re-deriving each dialect's quirks. Each takes already-built operand SQL (you quote/qualify the
+columns) plus a `DatabaseType`, and returns a SQL fragment.
+
+```dart
+Fn.concat(['"first"', '"last"'], DatabaseType.postgres);
+// (COALESCE(CAST("first" AS text), '') || COALESCE(CAST("last" AS text), ''))  ← NULL-skipping
+
+Fn.charLength('"name"', DatabaseType.mysql); // CHAR_LENGTH("name")  ← characters, not bytes
+Fn.round('"amount"', 2, DatabaseType.postgres); // ROUND(CAST("amount" AS numeric), 2)
+Fn.now(DatabaseType.sqlite); // datetime('now')
+
+// Fractional division — NEVER integer division (Postgres/MSSQL/SQLite truncate `5 / 2` to 2).
+Fn.divide('"total"', '"count"', DatabaseType.postgres); // (CAST("total" AS numeric) / "count")
+```
+
 ## Development
 
 CI expects the same checks locally (Chrome/Chromium required for `-p chrome`):

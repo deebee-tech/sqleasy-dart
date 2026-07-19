@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.1.0
+
+Tracks the TypeScript `@deebeetech/sqleasy` **10.1.0** golden corpus (byte-identical to 10.0.0 — the
+new surface is not a builder op). Mirrors the new **`Fn`** scalar-expression helper surface.
+
+- **`Fn`** — pure, per-dialect emit helpers for scalar expressions (`Fn.concat`, `Fn.charLength`,
+  `Fn.round`, `Fn.now`, `Fn.divide`). Each takes already-built operand SQL plus a `DatabaseType` and
+  returns a normalized SQL fragment. `Fn.divide` forces fractional division on the dialects that
+  otherwise truncate integer division (Postgres/MSSQL/SQLite).
+
 ## 4.0.0
 
 Tracks the TypeScript `@deebeetech/sqleasy` **10.0.0** golden corpus (was pinned to 9.0.0). 322
