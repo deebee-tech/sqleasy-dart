@@ -1,5 +1,29 @@
 # Changelog
 
+## 4.0.0
+
+Tracks the TypeScript `@deebeetech/sqleasy` **10.0.0** golden corpus (was pinned to 9.0.0). 322
+golden cases (was 314). Mirrors the published TypeScript 10.0.0 surface: eight new comparison
+operators and a null-safe MSSQL rewrite.
+
+**Breaking — an MSSQL error path becomes emitted SQL:**
+
+- **MSSQL `WhereOperator.isDistinctFrom` / `isNotDistinctFrom` no longer throw.** A `.where()`
+  value is always a bound literal whose null-ness is known at build time, so the null-safe
+  semantics collapse to plain SQL every MSSQL version supports: `col IS [NOT] NULL` for a NULL
+  value, else `(col <> v OR col IS NULL)` / `col = v`. Postgres/SQLite native and MySQL `<=>`
+  branches are unchanged.
+
+**New comparison operators (WHERE / HAVING / JSON predicates):**
+
+- **`regex` / `notRegex` / `iregex` / `notIregex`** — regular-expression match. Postgres `~`/`!~`
+  (+ case-insensitive `~*`/`!~*`); MySQL `REGEXP`/`NOT REGEXP` (case sensitivity is
+  collation-driven, so `iregex` emits the same operator). SQLite (no built-in `REGEXP` function)
+  and MSSQL (no engine before SQL Server 2025) have no operator and **throw** a `ParserError`.
+- **`contains` / `notContains` / `startsWith` / `endsWith`** — literal substring match. The bound
+  value is the raw text to find: the `%`/`_` (and MSSQL's `[`) in it are ESCAPED and the wildcards
+  are added by the builder, then a dialect-correct `ESCAPE` clause is appended. All four dialects.
+
 ## 3.0.0
 
 Tracks the TypeScript `@deebeetech/sqleasy` **9.0.0** golden corpus (was pinned to 8.0.0). 314
